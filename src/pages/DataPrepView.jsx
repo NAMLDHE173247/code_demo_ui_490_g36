@@ -265,7 +265,24 @@ function DataPrepView() {
 
   /* Stage 5 state */
   const [judgeModels, setJudgeModels] = useState({ gemini: true, openai: false, deepseek: true });
-  const [evalExpanded, setEvalExpanded] = useState(true);
+  const [evalExpanded, setEvalExpanded] = useState('eval_428051');
+  const [sepQualityModal, setSepQualityModal] = useState(null);
+  const [sepDistributionTab, setSepDistributionTab] = useState('subject');
+  const [sepEvalRecommendation, setSepEvalRecommendation] = useState('all');
+  const [sepEvalConflictOnly, setSepEvalConflictOnly] = useState(false);
+  const [sepEvalMinScore, setSepEvalMinScore] = useState(0);
+  const [sepRunningClass, setSepRunningClass] = useState(false);
+  const [sepRunningQuality, setSepRunningQuality] = useState(false);
+  const [sepRunningEval, setSepRunningEval] = useState(false);
+  const [sepSubjectFilter, setSepSubjectFilter] = useState('ALL');
+  const [sepSelectedDistSubject, setSepSelectedDistSubject] = useState('MATH');
+  const [sepSelectedDistQuality, setSepSelectedDistQuality] = useState('Rewrite');
+  const [sepSelectedError, setSepSelectedError] = useState('');
+  const [sepBalanceApplied, setSepBalanceApplied] = useState(false);
+  const [sepRewriteGenerated, setSepRewriteGenerated] = useState(false);
+  const [sepRewriteDecision, setSepRewriteDecision] = useState('ai');
+  const [sepQualityRatings, setSepQualityRatings] = useState({});
+  const [sepQualityLabels, setSepQualityLabels] = useState({});
 
   /* Stage 6 state */
   const SUB_STEPS_STAGE6 = [
@@ -495,12 +512,12 @@ function DataPrepView() {
     /* Filter conversations by search */
     const filtered = searchQuery.trim()
       ? CONVERSATIONS.filter(conv =>
-          conv.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          conv.messages.some(m =>
-            m.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            m.assistant.toLowerCase().includes(searchQuery.toLowerCase())
-          )
+        conv.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        conv.messages.some(m =>
+          m.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          m.assistant.toLowerCase().includes(searchQuery.toLowerCase())
         )
+      )
       : CONVERSATIONS;
 
     const filteredTotal = filtered.length;
@@ -556,281 +573,281 @@ function DataPrepView() {
         </div>
 
         {currentSubStep === 1 && (
-        <>
-        {/* Main content: preview + sidebar */}
-        <div className="stage2-layout">
-          {/* Left: Converted Dataset Preview */}
-          <div className="stage2-main">
-            <div className="preview-header">
-              <h3>Converted Dataset Preview</h3>
-              <span className="preview-count">
-                {pageMsgCount} messages · Showing {startConvIdx + 1}-{Math.min(startConvIdx + convsPerPage, filteredTotal)} of {filteredTotal} conversations
-                {searchQuery && ` (filtered from ${totalConvs})`}
-              </span>
-            </div>
+          <>
+            {/* Main content: preview + sidebar */}
+            <div className="stage2-layout">
+              {/* Left: Converted Dataset Preview */}
+              <div className="stage2-main">
+                <div className="preview-header">
+                  <h3>Converted Dataset Preview</h3>
+                  <span className="preview-count">
+                    {pageMsgCount} messages · Showing {startConvIdx + 1}-{Math.min(startConvIdx + convsPerPage, filteredTotal)} of {filteredTotal} conversations
+                    {searchQuery && ` (filtered from ${totalConvs})`}
+                  </span>
+                </div>
 
-            <div className="preview-toolbar">
-              <div className="toolbar-select-wrapper">
-                <label className="toolbar-label">Conversations / page:</label>
-                <select
-                  className="toolbar-select"
-                  value={convsPerPage}
-                  onChange={(e) => handleConvsPerPageChange(e.target.value)}
-                >
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="5">5</option>
-                  <option value="10">10</option>
-                  <option value="15">15</option>
-                </select>
-              </div>
-              <div className="toolbar-actions">
-                <button className="toolbar-btn-sm" onClick={expandAll} title="Expand all">Expand All</button>
-                <button className="toolbar-btn-sm" onClick={collapseAll} title="Collapse all">Collapse All</button>
-              </div>
-              <div className="toolbar-search">
-                <input
-                  type="text"
-                  className="toolbar-search-input"
-                  placeholder="Search conversations..."
-                  value={searchQuery}
-                  onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                />
-              </div>
-              <div className="toolbar-stats">
-                <span className="toolbar-stat-tag">{totalConvs} conversations</span>
-                <span className="toolbar-stat-tag">{totalMessages} messages</span>
-              </div>
-            </div>
+                <div className="preview-toolbar">
+                  <div className="toolbar-select-wrapper">
+                    <label className="toolbar-label">Conversations / page:</label>
+                    <select
+                      className="toolbar-select"
+                      value={convsPerPage}
+                      onChange={(e) => handleConvsPerPageChange(e.target.value)}
+                    >
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="5">5</option>
+                      <option value="10">10</option>
+                      <option value="15">15</option>
+                    </select>
+                  </div>
+                  <div className="toolbar-actions">
+                    <button className="toolbar-btn-sm" onClick={expandAll} title="Expand all">Expand All</button>
+                    <button className="toolbar-btn-sm" onClick={collapseAll} title="Collapse all">Collapse All</button>
+                  </div>
+                  <div className="toolbar-search">
+                    <input
+                      type="text"
+                      className="toolbar-search-input"
+                      placeholder="Search conversations..."
+                      value={searchQuery}
+                      onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                    />
+                  </div>
+                  <div className="toolbar-stats">
+                    <span className="toolbar-stat-tag">{totalConvs} conversations</span>
+                    <span className="toolbar-stat-tag">{totalMessages} messages</span>
+                  </div>
+                </div>
 
-            <div className="preview-table-wrapper">
-              <table className="preview-table conv-grouped">
-                <thead>
-                  <tr>
-                    <th className="col-conv-id">Conversation ID</th>
-                    <th className="col-msg-num">#</th>
-                    <th>User</th>
-                    <th>Assistant</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pageConvs.length === 0 && (
-                    <tr>
-                      <td colSpan={4} style={{ textAlign: 'center', padding: '32px', color: '#94a3b8' }}>
-                        No conversations match your search.
-                      </td>
-                    </tr>
-                  )}
-                  {pageConvs.map((conv, convPageIdx) => {
-                    const isExpanded = expandedConvs[conv.id] !== undefined ? expandedConvs[conv.id] : true;
-                    const groupClass = (startConvIdx + convPageIdx) % 2 === 1 ? 'conv-group-alt' : '';
-
-                    if (!isExpanded) {
-                      /* Collapsed: show summary row */
-                      return (
-                        <tr key={conv.id} className={`conv-row conv-first conv-last conv-collapsed ${groupClass}`}>
-                          <td className="col-conv-id-cell">
-                            <button className="conv-toggle-btn" onClick={() => toggleConv(conv.id)} title="Expand">
-                              <ChevronRight size={14} />
-                            </button>
-                            <span className="conv-id-badge">{conv.id}</span>
-                            <span className="conv-msg-count">{conv.messages.length} messages</span>
-                          </td>
-                          <td className="col-msg-num-cell">—</td>
-                          <td className="cell-truncate" title={conv.messages[0].user}>
-                            {conv.messages[0].user}
-                          </td>
-                          <td className="cell-truncate" title={conv.messages[0].assistant}>
-                            {conv.messages[0].assistant}
+                <div className="preview-table-wrapper">
+                  <table className="preview-table conv-grouped">
+                    <thead>
+                      <tr>
+                        <th className="col-conv-id">Conversation ID</th>
+                        <th className="col-msg-num">#</th>
+                        <th>User</th>
+                        <th>Assistant</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pageConvs.length === 0 && (
+                        <tr>
+                          <td colSpan={4} style={{ textAlign: 'center', padding: '32px', color: '#94a3b8' }}>
+                            No conversations match your search.
                           </td>
                         </tr>
-                      );
-                    }
+                      )}
+                      {pageConvs.map((conv, convPageIdx) => {
+                        const isExpanded = expandedConvs[conv.id] !== undefined ? expandedConvs[conv.id] : true;
+                        const groupClass = (startConvIdx + convPageIdx) % 2 === 1 ? 'conv-group-alt' : '';
 
-                    /* Expanded: show all messages */
-                    return conv.messages.map((msg, msgIdx) => (
-                      <tr
-                        key={`${conv.id}-${msgIdx}`}
-                        className={`conv-row ${msgIdx === 0 ? 'conv-first' : ''} ${msgIdx === conv.messages.length - 1 ? 'conv-last' : ''} ${groupClass}`}
-                      >
-                        {msgIdx === 0 && (
-                          <td className="col-conv-id-cell" rowSpan={conv.messages.length}>
-                            <button className="conv-toggle-btn" onClick={() => toggleConv(conv.id)} title="Collapse">
-                              <ChevronDown size={14} />
-                            </button>
-                            <span className="conv-id-badge">{conv.id}</span>
-                            <span className="conv-msg-count">{conv.messages.length} messages</span>
-                          </td>
-                        )}
-                        <td className="col-msg-num-cell">#{msgIdx + 1}</td>
-                        <td className="cell-truncate" title={msg.user}>{msg.user}</td>
-                        <td className="cell-truncate" title={msg.assistant}>{msg.assistant}</td>
-                      </tr>
-                    ));
-                  })}
-                </tbody>
-              </table>
-            </div>
+                        if (!isExpanded) {
+                          /* Collapsed: show summary row */
+                          return (
+                            <tr key={conv.id} className={`conv-row conv-first conv-last conv-collapsed ${groupClass}`}>
+                              <td className="col-conv-id-cell">
+                                <button className="conv-toggle-btn" onClick={() => toggleConv(conv.id)} title="Expand">
+                                  <ChevronRight size={14} />
+                                </button>
+                                <span className="conv-id-badge">{conv.id}</span>
+                                <span className="conv-msg-count">{conv.messages.length} messages</span>
+                              </td>
+                              <td className="col-msg-num-cell">—</td>
+                              <td className="cell-truncate" title={conv.messages[0].user}>
+                                {conv.messages[0].user}
+                              </td>
+                              <td className="cell-truncate" title={conv.messages[0].assistant}>
+                                {conv.messages[0].assistant}
+                              </td>
+                            </tr>
+                          );
+                        }
 
-            {/* Pagination */}
-            <div className="preview-pagination">
-              <button
-                className="pagination-btn"
-                disabled={currentPage <= 1}
-                onClick={() => setCurrentPage(currentPage - 1)}
-              >
-                Previous
-              </button>
-              <span className="pagination-info">Page {currentPage} / {totalPages || 1}</span>
-              <button
-                className="pagination-btn"
-                disabled={currentPage >= totalPages}
-                onClick={() => setCurrentPage(currentPage + 1)}
-              >
-                Next
-              </button>
-            </div>
-          </div>
+                        /* Expanded: show all messages */
+                        return conv.messages.map((msg, msgIdx) => (
+                          <tr
+                            key={`${conv.id}-${msgIdx}`}
+                            className={`conv-row ${msgIdx === 0 ? 'conv-first' : ''} ${msgIdx === conv.messages.length - 1 ? 'conv-last' : ''} ${groupClass}`}
+                          >
+                            {msgIdx === 0 && (
+                              <td className="col-conv-id-cell" rowSpan={conv.messages.length}>
+                                <button className="conv-toggle-btn" onClick={() => toggleConv(conv.id)} title="Collapse">
+                                  <ChevronDown size={14} />
+                                </button>
+                                <span className="conv-id-badge">{conv.id}</span>
+                                <span className="conv-msg-count">{conv.messages.length} messages</span>
+                              </td>
+                            )}
+                            <td className="col-msg-num-cell">#{msgIdx + 1}</td>
+                            <td className="cell-truncate" title={msg.user}>{msg.user}</td>
+                            <td className="cell-truncate" title={msg.assistant}>{msg.assistant}</td>
+                          </tr>
+                        ));
+                      })}
+                    </tbody>
+                  </table>
+                </div>
 
-          {/* Right: Sidebar */}
-          <div className="stage2-sidebar">
-            {/* Data Cleaning Pipeline */}
-            <div className="cleaning-pipeline-card">
-              <div className="cleaning-pipeline-row">
-                <span className="cleaning-label">Data Cleaning Pipeline</span>
-                <label className="cleaning-toggle">
-                  <span className="toggle-text">Enable</span>
-                  <input
-                    type="checkbox"
-                    checked={cleaningEnabled}
-                    onChange={() => setCleaningEnabled(!cleaningEnabled)}
-                  />
-                  <span className="toggle-checkmark"></span>
-                </label>
-              </div>
-
-              {cleaningEnabled && (
-                <div className="cleaning-options">
-                  {/* Checkbox: Xóa thẻ think hoàn chỉnh */}
-                  <label className="cleaning-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={removeCompleteThink}
-                      onChange={() => setRemoveCompleteThink(!removeCompleteThink)}
-                    />
-                    <span className="checkbox-mark"></span>
-                    <span className="checkbox-label">Xóa các cặp thẻ &lt;think&gt;...&lt;/think&gt; hoàn chỉnh</span>
-                  </label>
-
-                  {/* Checkbox: Vá lỗi thẻ think */}
-                  <label className="cleaning-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={removeUnclosedThink}
-                      onChange={() => setRemoveUnclosedThink(!removeUnclosedThink)}
-                    />
-                    <span className="checkbox-mark"></span>
-                    <span className="checkbox-label">Vá lỗi thẻ &lt;think&gt; bị thiếu thẻ đóng/mở (Regex + AI)</span>
-                  </label>
-
-                  {/* Checkbox: Lọc từ khóa lỗi */}
-                  <label className="cleaning-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={removeErrorKeywords}
-                      onChange={() => setRemoveErrorKeywords(!removeErrorKeywords)}
-                    />
-                    <span className="checkbox-mark"></span>
-                    <span className="checkbox-label">Lọc bỏ các từ khóa lỗi quy định</span>
-                  </label>
-
-                  {/* Min / Max chars */}
-                  <div className="cleaning-inputs-row">
-                    <div className="cleaning-input-group">
-                      <label>Min chars assistant</label>
-                      <input type="number" value={minChars} onChange={(e) => setMinChars(e.target.value)} />
-                    </div>
-                    <div className="cleaning-input-group">
-                      <label>Max chars assistant</label>
-                      <input type="number" value={maxChars} onChange={(e) => setMaxChars(e.target.value)} />
-                    </div>
-                  </div>
-
-                  {/* Min pairs */}
-                  <div className="cleaning-input-group" style={{ maxWidth: '50%' }}>
-                    <label>Số cặp hỏi đáp tối thiểu:</label>
-                    <input type="number" value={minPairs} onChange={(e) => setMinPairs(e.target.value)} />
-                  </div>
-
-                  {/* Preview button */}
+                {/* Pagination */}
+                <div className="preview-pagination">
                   <button
-                    className="cleaning-accept-btn"
-                    onClick={() => { setShowPreviewModal(true); setPreviewTab('before'); }}
+                    className="pagination-btn"
+                    disabled={currentPage <= 1}
+                    onClick={() => setCurrentPage(currentPage - 1)}
                   >
-                    <Eye size={16} />
-                    Preview & Apply Cleaning
+                    Previous
+                  </button>
+                  <span className="pagination-info">Page {currentPage} / {totalPages || 1}</span>
+                  <button
+                    className="pagination-btn"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                  >
+                    Next
                   </button>
                 </div>
-              )}
-
-              <button className="reset-btn" onClick={() => {
-                setCleaningApplied(false);
-                setCleaningEnabled(false);
-                setRemoveErrorKeywords(true);
-                setRemoveUnclosedThink(true);
-                setRemoveCompleteThink(false);
-                setMinChars('5');
-                setMaxChars('4000');
-                setMinPairs('1');
-              }}>
-                <RotateCcw size={14} />
-                Reset to Original
-              </button>
-            </div>
-
-            {/* Post-conversion Statistics — shown after Accept */}
-            {cleaningApplied && (
-              <div className="post-stats-card">
-                <div className="post-stats-header">
-                  <Check size={16} className="post-stats-icon" />
-                  <span>Post-conversion Statistics</span>
-                </div>
-                <div className="post-stats-grid">
-                  <div className="post-stat-item">
-                    <div className="post-stat-label">Converted Records</div>
-                    <div className="post-stat-value">120</div>
-                  </div>
-                  <div className="post-stat-item">
-                    <div className="post-stat-label">Source Messages</div>
-                    <div className="post-stat-value">586</div>
-                  </div>
-                </div>
-
-                <div className="cleaning-report-title">CLEANING REPORT</div>
-                <div className="post-stats-grid">
-                  <div className="post-stat-item">
-                    <div className="post-stat-label">Error keywords</div>
-                    <div className="post-stat-value cleaning-red">-0</div>
-                  </div>
-                  <div className="post-stat-item">
-                    <div className="post-stat-label">Length</div>
-                    <div className="post-stat-value cleaning-red">-0</div>
-                  </div>
-                  <div className="post-stat-item">
-                    <div className="post-stat-label">Unclosed &lt;think&gt;</div>
-                    <div className="post-stat-value cleaning-red">-0</div>
-                  </div>
-                  <div className="post-stat-item highlight">
-                    <div className="post-stat-label">Final Count</div>
-                    <div className="post-stat-value cleaning-green">120</div>
-                  </div>
-                </div>
               </div>
-            )}
-          </div>
-        </div>
-        </>
+
+              {/* Right: Sidebar */}
+              <div className="stage2-sidebar">
+                {/* Data Cleaning Pipeline */}
+                <div className="cleaning-pipeline-card">
+                  <div className="cleaning-pipeline-row">
+                    <span className="cleaning-label">Data Cleaning Pipeline</span>
+                    <label className="cleaning-toggle">
+                      <span className="toggle-text">Enable</span>
+                      <input
+                        type="checkbox"
+                        checked={cleaningEnabled}
+                        onChange={() => setCleaningEnabled(!cleaningEnabled)}
+                      />
+                      <span className="toggle-checkmark"></span>
+                    </label>
+                  </div>
+
+                  {cleaningEnabled && (
+                    <div className="cleaning-options">
+                      {/* Checkbox: Xóa thẻ think hoàn chỉnh */}
+                      <label className="cleaning-checkbox">
+                        <input
+                          type="checkbox"
+                          checked={removeCompleteThink}
+                          onChange={() => setRemoveCompleteThink(!removeCompleteThink)}
+                        />
+                        <span className="checkbox-mark"></span>
+                        <span className="checkbox-label">Xóa các cặp thẻ &lt;think&gt;...&lt;/think&gt; hoàn chỉnh</span>
+                      </label>
+
+                      {/* Checkbox: Vá lỗi thẻ think */}
+                      <label className="cleaning-checkbox">
+                        <input
+                          type="checkbox"
+                          checked={removeUnclosedThink}
+                          onChange={() => setRemoveUnclosedThink(!removeUnclosedThink)}
+                        />
+                        <span className="checkbox-mark"></span>
+                        <span className="checkbox-label">Vá lỗi thẻ &lt;think&gt; bị thiếu thẻ đóng/mở (Regex + AI)</span>
+                      </label>
+
+                      {/* Checkbox: Lọc từ khóa lỗi */}
+                      <label className="cleaning-checkbox">
+                        <input
+                          type="checkbox"
+                          checked={removeErrorKeywords}
+                          onChange={() => setRemoveErrorKeywords(!removeErrorKeywords)}
+                        />
+                        <span className="checkbox-mark"></span>
+                        <span className="checkbox-label">Lọc bỏ các từ khóa lỗi quy định</span>
+                      </label>
+
+                      {/* Min / Max chars */}
+                      <div className="cleaning-inputs-row">
+                        <div className="cleaning-input-group">
+                          <label>Min chars assistant</label>
+                          <input type="number" value={minChars} onChange={(e) => setMinChars(e.target.value)} />
+                        </div>
+                        <div className="cleaning-input-group">
+                          <label>Max chars assistant</label>
+                          <input type="number" value={maxChars} onChange={(e) => setMaxChars(e.target.value)} />
+                        </div>
+                      </div>
+
+                      {/* Min pairs */}
+                      <div className="cleaning-input-group" style={{ maxWidth: '50%' }}>
+                        <label>Số cặp hỏi đáp tối thiểu:</label>
+                        <input type="number" value={minPairs} onChange={(e) => setMinPairs(e.target.value)} />
+                      </div>
+
+                      {/* Preview button */}
+                      <button
+                        className="cleaning-accept-btn"
+                        onClick={() => { setShowPreviewModal(true); setPreviewTab('before'); }}
+                      >
+                        <Eye size={16} />
+                        Preview & Apply Cleaning
+                      </button>
+                    </div>
+                  )}
+
+                  <button className="reset-btn" onClick={() => {
+                    setCleaningApplied(false);
+                    setCleaningEnabled(false);
+                    setRemoveErrorKeywords(true);
+                    setRemoveUnclosedThink(true);
+                    setRemoveCompleteThink(false);
+                    setMinChars('5');
+                    setMaxChars('4000');
+                    setMinPairs('1');
+                  }}>
+                    <RotateCcw size={14} />
+                    Reset to Original
+                  </button>
+                </div>
+
+                {/* Post-conversion Statistics — shown after Accept */}
+                {cleaningApplied && (
+                  <div className="post-stats-card">
+                    <div className="post-stats-header">
+                      <Check size={16} className="post-stats-icon" />
+                      <span>Post-conversion Statistics</span>
+                    </div>
+                    <div className="post-stats-grid">
+                      <div className="post-stat-item">
+                        <div className="post-stat-label">Converted Records</div>
+                        <div className="post-stat-value">120</div>
+                      </div>
+                      <div className="post-stat-item">
+                        <div className="post-stat-label">Source Messages</div>
+                        <div className="post-stat-value">586</div>
+                      </div>
+                    </div>
+
+                    <div className="cleaning-report-title">CLEANING REPORT</div>
+                    <div className="post-stats-grid">
+                      <div className="post-stat-item">
+                        <div className="post-stat-label">Error keywords</div>
+                        <div className="post-stat-value cleaning-red">-0</div>
+                      </div>
+                      <div className="post-stat-item">
+                        <div className="post-stat-label">Length</div>
+                        <div className="post-stat-value cleaning-red">-0</div>
+                      </div>
+                      <div className="post-stat-item">
+                        <div className="post-stat-label">Unclosed &lt;think&gt;</div>
+                        <div className="post-stat-value cleaning-red">-0</div>
+                      </div>
+                      <div className="post-stat-item highlight">
+                        <div className="post-stat-label">Final Count</div>
+                        <div className="post-stat-value cleaning-green">120</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
         )}
 
         {currentSubStep === 2 && (
@@ -901,7 +918,7 @@ function DataPrepView() {
                       <text x="770" y="304" className="axis-label-right">0</text>
                       <text x="795" y="175" className="axis-title-right" transform="rotate(90, 795, 175)">Silhouette</text>
                       {/* X-axis labels */}
-                      {Array.from({length: 20}, (_, i) => (
+                      {Array.from({ length: 20 }, (_, i) => (
                         <text key={`x-${i}`} x={60 + (i * 700 / 19)} y="330" className="axis-label" textAnchor="middle">{i + 1}</text>
                       ))}
                       {/* Recommended K=14 dotted line */}
@@ -910,24 +927,24 @@ function DataPrepView() {
                       <polyline
                         fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinejoin="round"
                         points={[
-                          [60, 52], [60+700/19*1, 85], [60+700/19*2, 105], [60+700/19*3, 125],
-                          [60+700/19*4, 140], [60+700/19*5, 155], [60+700/19*6, 168],
-                          [60+700/19*7, 178], [60+700/19*8, 188], [60+700/19*9, 196],
-                          [60+700/19*10, 205], [60+700/19*11, 212], [60+700/19*12, 218],
-                          [60+700/19*13, 226], [60+700/19*14, 235], [60+700/19*15, 243],
-                          [60+700/19*16, 250], [60+700/19*17, 255], [60+700/19*18, 262],
-                          [60+700/19*19, 268]
+                          [60, 52], [60 + 700 / 19 * 1, 85], [60 + 700 / 19 * 2, 105], [60 + 700 / 19 * 3, 125],
+                          [60 + 700 / 19 * 4, 140], [60 + 700 / 19 * 5, 155], [60 + 700 / 19 * 6, 168],
+                          [60 + 700 / 19 * 7, 178], [60 + 700 / 19 * 8, 188], [60 + 700 / 19 * 9, 196],
+                          [60 + 700 / 19 * 10, 205], [60 + 700 / 19 * 11, 212], [60 + 700 / 19 * 12, 218],
+                          [60 + 700 / 19 * 13, 226], [60 + 700 / 19 * 14, 235], [60 + 700 / 19 * 15, 243],
+                          [60 + 700 / 19 * 16, 250], [60 + 700 / 19 * 17, 255], [60 + 700 / 19 * 18, 262],
+                          [60 + 700 / 19 * 19, 268]
                         ].map(p => p.join(',')).join(' ')}
                       />
                       {/* WCSS dots */}
                       {[
-                        [60, 52], [60+700/19*1, 85], [60+700/19*2, 105], [60+700/19*3, 125],
-                        [60+700/19*4, 140], [60+700/19*5, 155], [60+700/19*6, 168],
-                        [60+700/19*7, 178], [60+700/19*8, 188], [60+700/19*9, 196],
-                        [60+700/19*10, 205], [60+700/19*11, 212], [60+700/19*12, 218],
-                        [60+700/19*13, 226], [60+700/19*14, 235], [60+700/19*15, 243],
-                        [60+700/19*16, 250], [60+700/19*17, 255], [60+700/19*18, 262],
-                        [60+700/19*19, 268]
+                        [60, 52], [60 + 700 / 19 * 1, 85], [60 + 700 / 19 * 2, 105], [60 + 700 / 19 * 3, 125],
+                        [60 + 700 / 19 * 4, 140], [60 + 700 / 19 * 5, 155], [60 + 700 / 19 * 6, 168],
+                        [60 + 700 / 19 * 7, 178], [60 + 700 / 19 * 8, 188], [60 + 700 / 19 * 9, 196],
+                        [60 + 700 / 19 * 10, 205], [60 + 700 / 19 * 11, 212], [60 + 700 / 19 * 12, 218],
+                        [60 + 700 / 19 * 13, 226], [60 + 700 / 19 * 14, 235], [60 + 700 / 19 * 15, 243],
+                        [60 + 700 / 19 * 16, 250], [60 + 700 / 19 * 17, 255], [60 + 700 / 19 * 18, 262],
+                        [60 + 700 / 19 * 19, 268]
                       ].map((p, i) => (
                         <circle key={`wc-${i}`} cx={p[0]} cy={p[1]} r="4" fill="white" stroke="#3b82f6" strokeWidth="2" />
                       ))}
@@ -935,24 +952,24 @@ function DataPrepView() {
                       <polyline
                         fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinejoin="round"
                         points={[
-                          [60, 280], [60+700/19*1, 125], [60+700/19*2, 110],
-                          [60+700/19*3, 100], [60+700/19*4, 95], [60+700/19*5, 88],
-                          [60+700/19*6, 82], [60+700/19*7, 78], [60+700/19*8, 72],
-                          [60+700/19*9, 68], [60+700/19*10, 62], [60+700/19*11, 56],
-                          [60+700/19*12, 50], [60+700/19*13, 48], [60+700/19*14, 50],
-                          [60+700/19*15, 48], [60+700/19*16, 50], [60+700/19*17, 48],
-                          [60+700/19*18, 44], [60+700/19*19, 44]
+                          [60, 280], [60 + 700 / 19 * 1, 125], [60 + 700 / 19 * 2, 110],
+                          [60 + 700 / 19 * 3, 100], [60 + 700 / 19 * 4, 95], [60 + 700 / 19 * 5, 88],
+                          [60 + 700 / 19 * 6, 82], [60 + 700 / 19 * 7, 78], [60 + 700 / 19 * 8, 72],
+                          [60 + 700 / 19 * 9, 68], [60 + 700 / 19 * 10, 62], [60 + 700 / 19 * 11, 56],
+                          [60 + 700 / 19 * 12, 50], [60 + 700 / 19 * 13, 48], [60 + 700 / 19 * 14, 50],
+                          [60 + 700 / 19 * 15, 48], [60 + 700 / 19 * 16, 50], [60 + 700 / 19 * 17, 48],
+                          [60 + 700 / 19 * 18, 44], [60 + 700 / 19 * 19, 44]
                         ].map(p => p.join(',')).join(' ')}
                       />
                       {/* Silhouette dots */}
                       {[
-                        [60, 280], [60+700/19*1, 125], [60+700/19*2, 110],
-                        [60+700/19*3, 100], [60+700/19*4, 95], [60+700/19*5, 88],
-                        [60+700/19*6, 82], [60+700/19*7, 78], [60+700/19*8, 72],
-                        [60+700/19*9, 68], [60+700/19*10, 62], [60+700/19*11, 56],
-                        [60+700/19*12, 50], [60+700/19*13, 48], [60+700/19*14, 50],
-                        [60+700/19*15, 48], [60+700/19*16, 50], [60+700/19*17, 48],
-                        [60+700/19*18, 44], [60+700/19*19, 44]
+                        [60, 280], [60 + 700 / 19 * 1, 125], [60 + 700 / 19 * 2, 110],
+                        [60 + 700 / 19 * 3, 100], [60 + 700 / 19 * 4, 95], [60 + 700 / 19 * 5, 88],
+                        [60 + 700 / 19 * 6, 82], [60 + 700 / 19 * 7, 78], [60 + 700 / 19 * 8, 72],
+                        [60 + 700 / 19 * 9, 68], [60 + 700 / 19 * 10, 62], [60 + 700 / 19 * 11, 56],
+                        [60 + 700 / 19 * 12, 50], [60 + 700 / 19 * 13, 48], [60 + 700 / 19 * 14, 50],
+                        [60 + 700 / 19 * 15, 48], [60 + 700 / 19 * 16, 50], [60 + 700 / 19 * 17, 48],
+                        [60 + 700 / 19 * 18, 44], [60 + 700 / 19 * 19, 44]
                       ].map((p, i) => (
                         <circle key={`sl-${i}`} cx={p[0]} cy={p[1]} r="4" fill="white" stroke="#16a34a" strokeWidth="2" />
                       ))}
@@ -978,219 +995,219 @@ function DataPrepView() {
           ];
 
           return (
-          <div className="stage2-layout cluster-layout">
-            {/* Left: Dataset Preview */}
-            <div className="stage2-main">
-              <div className="preview-header">
-                <h3>Converted Dataset Preview</h3>
-                <span className="preview-count">
-                  {pageMsgCount} messages · Showing {startConvIdx + 1}-{Math.min(startConvIdx + convsPerPage, filteredTotal)} of {filteredTotal} conversations
-                  {searchQuery && ` (filtered from ${totalConvs})`}
-                </span>
-              </div>
-
-              <div className="preview-toolbar">
-                <div className="toolbar-select-wrapper">
-                  <label className="toolbar-label">Conversations / page:</label>
-                  <select
-                    className="toolbar-select"
-                    value={convsPerPage}
-                    onChange={(e) => handleConvsPerPageChange(e.target.value)}
-                  >
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="5">5</option>
-                    <option value="10">10</option>
-                    <option value="15">15</option>
-                  </select>
+            <div className="stage2-layout cluster-layout">
+              {/* Left: Dataset Preview */}
+              <div className="stage2-main">
+                <div className="preview-header">
+                  <h3>Converted Dataset Preview</h3>
+                  <span className="preview-count">
+                    {pageMsgCount} messages · Showing {startConvIdx + 1}-{Math.min(startConvIdx + convsPerPage, filteredTotal)} of {filteredTotal} conversations
+                    {searchQuery && ` (filtered from ${totalConvs})`}
+                  </span>
                 </div>
-                <div className="toolbar-actions">
-                  <button className="toolbar-btn-sm" onClick={expandAll} title="Expand all">Expand All</button>
-                  <button className="toolbar-btn-sm" onClick={collapseAll} title="Collapse all">Collapse All</button>
-                </div>
-                <div className="toolbar-search">
-                  <input
-                    type="text"
-                    className="toolbar-search-input"
-                    placeholder="Search conversations..."
-                    value={searchQuery}
-                    onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                  />
-                </div>
-                <div className="toolbar-stats">
-                  <span className="toolbar-stat-tag">{totalConvs} conversations</span>
-                  <span className="toolbar-stat-tag">{totalMessages} messages</span>
-                </div>
-              </div>
 
-              <div className="preview-table-wrapper">
-                <table className="preview-table conv-grouped">
-                  <thead>
-                    <tr>
-                      <th className="col-conv-id">Conversation ID</th>
-                      <th className="col-msg-num">#</th>
-                      <th>User</th>
-                      <th>Assistant</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pageConvs.length === 0 && (
-                      <tr>
-                        <td colSpan={4} style={{ textAlign: 'center', padding: '32px', color: '#94a3b8' }}>
-                          No conversations match your search.
-                        </td>
-                      </tr>
-                    )}
-                    {pageConvs.map((conv, convPageIdx) => {
-                      const isExpanded = expandedConvs[conv.id] !== undefined ? expandedConvs[conv.id] : true;
-                      const groupClass = (startConvIdx + convPageIdx) % 2 === 1 ? 'conv-group-alt' : '';
-
-                      if (!isExpanded) {
-                        /* Collapsed: show summary row */
-                        return (
-                          <tr key={conv.id} className={`conv-row conv-first conv-last conv-collapsed ${groupClass}`}>
-                            <td className="col-conv-id-cell">
-                              <button className="conv-toggle-btn" onClick={() => toggleConv(conv.id)} title="Expand">
-                                <ChevronRight size={14} />
-                              </button>
-                              <span className="conv-id-badge">{conv.id}</span>
-                              <span className="conv-msg-count">{conv.messages.length} messages</span>
-                            </td>
-                            <td className="col-msg-num-cell">—</td>
-                            <td className="cell-truncate" title={conv.messages[0].user}>
-                              {conv.messages[0].user}
-                            </td>
-                            <td className="cell-truncate" title={conv.messages[0].assistant}>
-                              {conv.messages[0].assistant}
-                            </td>
-                          </tr>
-                        );
-                      }
-
-                      /* Expanded: show all messages */
-                      return conv.messages.map((msg, msgIdx) => (
-                        <tr
-                          key={`${conv.id}-${msgIdx}`}
-                          className={`conv-row ${msgIdx === 0 ? 'conv-first' : ''} ${msgIdx === conv.messages.length - 1 ? 'conv-last' : ''} ${groupClass}`}
-                        >
-                          {msgIdx === 0 && (
-                            <td className="col-conv-id-cell" rowSpan={conv.messages.length}>
-                              <button className="conv-toggle-btn" onClick={() => toggleConv(conv.id)} title="Collapse">
-                                <ChevronDown size={14} />
-                              </button>
-                              <span className="conv-id-badge">{conv.id}</span>
-                              <span className="conv-msg-count">{conv.messages.length} messages</span>
-                            </td>
-                          )}
-                          <td className="col-msg-num-cell">#{msgIdx + 1}</td>
-                          <td className="cell-truncate" title={msg.user}>{msg.user}</td>
-                          <td className="cell-truncate" title={msg.assistant}>{msg.assistant}</td>
-                        </tr>
-                      ));
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination */}
-              <div className="preview-pagination">
-                <button
-                  className="pagination-btn"
-                  disabled={currentPage <= 1}
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                >
-                  Previous
-                </button>
-                <span className="pagination-info">Page {currentPage} / {totalPages || 1}</span>
-                <button
-                  className="pagination-btn"
-                  disabled={currentPage >= totalPages}
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-
-            {/* Right: Clustering Sidebar */}
-            <div className="stage2-sidebar cluster-sidebar">
-              <div className="cleaning-pipeline-card">
-                <h3 className="cluster-card-title">Clustering Parameters</h3>
-                <div className="cleaning-input-group" style={{ marginBottom: 8 }}>
-                  <label>Target K (Clusters)</label>
-                  <input type="number" value={targetK} onChange={(e) => setTargetK(e.target.value)} />
-                </div>
-                <p className="cluster-recommend">Recommended K: <strong>14</strong> (stable plateau: silhouette remains strong while WCSS has flattened)</p>
-                <div className="cleaning-inputs-row" style={{ marginBottom: 12 }}>
-                  <div className="cleaning-input-group">
-                    <label>DBSCAN EPS</label>
-                    <input type="number" step="0.1" value={clusterEps} onChange={(e) => setClusterEps(e.target.value)} />
+                <div className="preview-toolbar">
+                  <div className="toolbar-select-wrapper">
+                    <label className="toolbar-label">Conversations / page:</label>
+                    <select
+                      className="toolbar-select"
+                      value={convsPerPage}
+                      onChange={(e) => handleConvsPerPageChange(e.target.value)}
+                    >
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="5">5</option>
+                      <option value="10">10</option>
+                      <option value="15">15</option>
+                    </select>
                   </div>
-                  <div className="cleaning-input-group">
-                    <label>Min Samples</label>
-                    <input type="number" value={clusterMinSamples} onChange={(e) => setClusterMinSamples(e.target.value)} />
+                  <div className="toolbar-actions">
+                    <button className="toolbar-btn-sm" onClick={expandAll} title="Expand all">Expand All</button>
+                    <button className="toolbar-btn-sm" onClick={collapseAll} title="Collapse all">Collapse All</button>
                   </div>
-                </div>
-                <button className="cluster-run-btn" onClick={() => setClusterRan(true)}>
-                  <Sparkles size={16} />
-                  Cluster
-                </button>
-              </div>
-
-              {clusterRan && (
-                <>
-                  <div className="cleaning-pipeline-card">
-                    <div className="sim-header">
-                      <span className="sim-label">Similarity Threshold (for Deduplicate)</span>
-                      <span className="sim-value">{simThreshold.toFixed(3)}</span>
-                    </div>
+                  <div className="toolbar-search">
                     <input
-                      type="range" min="0" max="1" step="0.001"
-                      value={simThreshold}
-                      onChange={(e) => setSimThreshold(parseFloat(e.target.value))}
-                      className="sim-slider"
+                      type="text"
+                      className="toolbar-search-input"
+                      placeholder="Search conversations..."
+                      value={searchQuery}
+                      onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                     />
-                    <div className="cluster-action-btns">
-                      <button className="cluster-btn-noise">Remove Noise</button>
-                      <button className="cluster-btn-dedup">Deduplicate</button>
-                    </div>
-                    <button className="reset-filter-btn">Reset Filter</button>
                   </div>
+                  <div className="toolbar-stats">
+                    <span className="toolbar-stat-tag">{totalConvs} conversations</span>
+                    <span className="toolbar-stat-tag">{totalMessages} messages</span>
+                  </div>
+                </div>
 
-                  <div className="cleaning-pipeline-card">
-                    <div className="cluster-stats-header">
-                      <span className="cluster-stats-title">Cluster Statistics</span>
-                      <button className="compare-btn" onClick={() => setShowCompareModal(true)}>
-                        <Eye size={14} />
-                        Compare Groups
-                      </button>
-                    </div>
-                    <table className="cluster-stats-table">
-                      <thead>
+                <div className="preview-table-wrapper">
+                  <table className="preview-table conv-grouped">
+                    <thead>
+                      <tr>
+                        <th className="col-conv-id">Conversation ID</th>
+                        <th className="col-msg-num">#</th>
+                        <th>User</th>
+                        <th>Assistant</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pageConvs.length === 0 && (
                         <tr>
-                          <th>Select</th>
-                          <th>Group</th>
-                          <th>Count</th>
-                          <th>Avg Similarity</th>
+                          <td colSpan={4} style={{ textAlign: 'center', padding: '32px', color: '#94a3b8' }}>
+                            No conversations match your search.
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {CLUSTER_GROUPS.map((g, i) => (
-                          <tr key={i}>
-                            <td><input type="checkbox" /></td>
-                            <td><strong>{g.name}</strong></td>
-                            <td className="count-cell">{g.count}</td>
-                            <td className="sim-cell">{g.sim.toFixed(4)}</td>
+                      )}
+                      {pageConvs.map((conv, convPageIdx) => {
+                        const isExpanded = expandedConvs[conv.id] !== undefined ? expandedConvs[conv.id] : true;
+                        const groupClass = (startConvIdx + convPageIdx) % 2 === 1 ? 'conv-group-alt' : '';
+
+                        if (!isExpanded) {
+                          /* Collapsed: show summary row */
+                          return (
+                            <tr key={conv.id} className={`conv-row conv-first conv-last conv-collapsed ${groupClass}`}>
+                              <td className="col-conv-id-cell">
+                                <button className="conv-toggle-btn" onClick={() => toggleConv(conv.id)} title="Expand">
+                                  <ChevronRight size={14} />
+                                </button>
+                                <span className="conv-id-badge">{conv.id}</span>
+                                <span className="conv-msg-count">{conv.messages.length} messages</span>
+                              </td>
+                              <td className="col-msg-num-cell">—</td>
+                              <td className="cell-truncate" title={conv.messages[0].user}>
+                                {conv.messages[0].user}
+                              </td>
+                              <td className="cell-truncate" title={conv.messages[0].assistant}>
+                                {conv.messages[0].assistant}
+                              </td>
+                            </tr>
+                          );
+                        }
+
+                        /* Expanded: show all messages */
+                        return conv.messages.map((msg, msgIdx) => (
+                          <tr
+                            key={`${conv.id}-${msgIdx}`}
+                            className={`conv-row ${msgIdx === 0 ? 'conv-first' : ''} ${msgIdx === conv.messages.length - 1 ? 'conv-last' : ''} ${groupClass}`}
+                          >
+                            {msgIdx === 0 && (
+                              <td className="col-conv-id-cell" rowSpan={conv.messages.length}>
+                                <button className="conv-toggle-btn" onClick={() => toggleConv(conv.id)} title="Collapse">
+                                  <ChevronDown size={14} />
+                                </button>
+                                <span className="conv-id-badge">{conv.id}</span>
+                                <span className="conv-msg-count">{conv.messages.length} messages</span>
+                              </td>
+                            )}
+                            <td className="col-msg-num-cell">#{msgIdx + 1}</td>
+                            <td className="cell-truncate" title={msg.user}>{msg.user}</td>
+                            <td className="cell-truncate" title={msg.assistant}>{msg.assistant}</td>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        ));
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination */}
+                <div className="preview-pagination">
+                  <button
+                    className="pagination-btn"
+                    disabled={currentPage <= 1}
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                  >
+                    Previous
+                  </button>
+                  <span className="pagination-info">Page {currentPage} / {totalPages || 1}</span>
+                  <button
+                    className="pagination-btn"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+
+              {/* Right: Clustering Sidebar */}
+              <div className="stage2-sidebar cluster-sidebar">
+                <div className="cleaning-pipeline-card">
+                  <h3 className="cluster-card-title">Clustering Parameters</h3>
+                  <div className="cleaning-input-group" style={{ marginBottom: 8 }}>
+                    <label>Target K (Clusters)</label>
+                    <input type="number" value={targetK} onChange={(e) => setTargetK(e.target.value)} />
                   </div>
-                </>
-              )}
+                  <p className="cluster-recommend">Recommended K: <strong>14</strong> (stable plateau: silhouette remains strong while WCSS has flattened)</p>
+                  <div className="cleaning-inputs-row" style={{ marginBottom: 12 }}>
+                    <div className="cleaning-input-group">
+                      <label>DBSCAN EPS</label>
+                      <input type="number" step="0.1" value={clusterEps} onChange={(e) => setClusterEps(e.target.value)} />
+                    </div>
+                    <div className="cleaning-input-group">
+                      <label>Min Samples</label>
+                      <input type="number" value={clusterMinSamples} onChange={(e) => setClusterMinSamples(e.target.value)} />
+                    </div>
+                  </div>
+                  <button className="cluster-run-btn" onClick={() => setClusterRan(true)}>
+                    <Sparkles size={16} />
+                    Cluster
+                  </button>
+                </div>
+
+                {clusterRan && (
+                  <>
+                    <div className="cleaning-pipeline-card">
+                      <div className="sim-header">
+                        <span className="sim-label">Similarity Threshold (for Deduplicate)</span>
+                        <span className="sim-value">{simThreshold.toFixed(3)}</span>
+                      </div>
+                      <input
+                        type="range" min="0" max="1" step="0.001"
+                        value={simThreshold}
+                        onChange={(e) => setSimThreshold(parseFloat(e.target.value))}
+                        className="sim-slider"
+                      />
+                      <div className="cluster-action-btns">
+                        <button className="cluster-btn-noise">Remove Noise</button>
+                        <button className="cluster-btn-dedup">Deduplicate</button>
+                      </div>
+                      <button className="reset-filter-btn">Reset Filter</button>
+                    </div>
+
+                    <div className="cleaning-pipeline-card">
+                      <div className="cluster-stats-header">
+                        <span className="cluster-stats-title">Cluster Statistics</span>
+                        <button className="compare-btn" onClick={() => setShowCompareModal(true)}>
+                          <Eye size={14} />
+                          Compare Groups
+                        </button>
+                      </div>
+                      <table className="cluster-stats-table">
+                        <thead>
+                          <tr>
+                            <th>Select</th>
+                            <th>Group</th>
+                            <th>Count</th>
+                            <th>Avg Similarity</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {CLUSTER_GROUPS.map((g, i) => (
+                            <tr key={i}>
+                              <td><input type="checkbox" /></td>
+                              <td><strong>{g.name}</strong></td>
+                              <td className="count-cell">{g.count}</td>
+                              <td className="sim-cell">{g.sim.toFixed(4)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
           );
         })()}
 
@@ -1400,7 +1417,7 @@ function DataPrepView() {
 
             {/* Status Cards Row */}
             <div className="sa-status-row">
-              {['ASSIGNED','ASSIGNEES','IN PROGRESS','SUBMITTED','SAVED DECISIONS','NEEDS REVIEW','PUBLISHED'].map(label => (
+              {['ASSIGNED', 'ASSIGNEES', 'IN PROGRESS', 'SUBMITTED', 'SAVED DECISIONS', 'NEEDS REVIEW', 'PUBLISHED'].map(label => (
                 <div key={label} className="sa-status-card">
                   <span className="sa-status-label">{label}</span>
                   <span className="sa-status-value">0</span>
@@ -1468,9 +1485,9 @@ function DataPrepView() {
                     <table className="sa-tasks-table sa-samples-table">
                       <thead>
                         <tr>
-                          <th style={{width:'5%'}}>ID</th>
-                          <th style={{width:'65%'}}>SAMPLE KEY & CONTENT</th>
-                          <th style={{width:'30%'}}>ASSIGNEES</th>
+                          <th style={{ width: '5%' }}>ID</th>
+                          <th style={{ width: '65%' }}>SAMPLE KEY & CONTENT</th>
+                          <th style={{ width: '30%' }}>ASSIGNEES</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1563,99 +1580,99 @@ function DataPrepView() {
                   </div>
 
                   {iaActiveTab === 'assignment' && (
-                  <>
-                  <div className="ia-chat-messages">
-                    {/* Message 1 - User */}
-                    <div className="ia-msg ia-msg-user">
-                      <div className="ia-msg-bubble ia-bubble-user">
-                        <span className="ia-msg-role">USER</span>
-                        <p>Em không hiểu chuyển động thẳng đều là gì.</p>
-                      </div>
-                      <span className="ia-msg-num">1</span>
-                      <div className="ia-msg-label ia-label-theo">THEO <X size={10} /></div>
-                    </div>
+                    <>
+                      <div className="ia-chat-messages">
+                        {/* Message 1 - User */}
+                        <div className="ia-msg ia-msg-user">
+                          <div className="ia-msg-bubble ia-bubble-user">
+                            <span className="ia-msg-role">USER</span>
+                            <p>Em không hiểu chuyển động thẳng đều là gì.</p>
+                          </div>
+                          <span className="ia-msg-num">1</span>
+                          <div className="ia-msg-label ia-label-theo">THEO <X size={10} /></div>
+                        </div>
 
-                    {/* Message 1 - Assistant */}
-                    <div className="ia-msg ia-msg-assistant">
-                      <span className="ia-msg-num ia-num-green">1</span>
-                      <div className="ia-msg-bubble ia-bubble-assistant">
-                        <span className="ia-msg-role">ASSISTANT</span>
-                        <p>Không sao, mình đi từng bước nhé. Em thử nghĩ xem: khi nói một vật chuyển động, điều đó có nghĩa là gì?</p>
-                      </div>
-                      <div className="ia-msg-label ia-label-theo">THEO <X size={10} /></div>
-                    </div>
+                        {/* Message 1 - Assistant */}
+                        <div className="ia-msg ia-msg-assistant">
+                          <span className="ia-msg-num ia-num-green">1</span>
+                          <div className="ia-msg-bubble ia-bubble-assistant">
+                            <span className="ia-msg-role">ASSISTANT</span>
+                            <p>Không sao, mình đi từng bước nhé. Em thử nghĩ xem: khi nói một vật chuyển động, điều đó có nghĩa là gì?</p>
+                          </div>
+                          <div className="ia-msg-label ia-label-theo">THEO <X size={10} /></div>
+                        </div>
 
-                    {/* Message 2 - User */}
-                    <div className="ia-msg ia-msg-user">
-                      <div className="ia-msg-bubble ia-bubble-user">
-                        <span className="ia-msg-role">USER</span>
-                        <p>Là vật đang di chuyển a.</p>
-                      </div>
-                      <span className="ia-msg-num">2</span>
-                      <div className="ia-msg-label ia-label-ok"><Check size={10} /> OK <X size={10} /></div>
-                    </div>
+                        {/* Message 2 - User */}
+                        <div className="ia-msg ia-msg-user">
+                          <div className="ia-msg-bubble ia-bubble-user">
+                            <span className="ia-msg-role">USER</span>
+                            <p>Là vật đang di chuyển a.</p>
+                          </div>
+                          <span className="ia-msg-num">2</span>
+                          <div className="ia-msg-label ia-label-ok"><Check size={10} /> OK <X size={10} /></div>
+                        </div>
 
-                    {/* Message 2 - Assistant */}
-                    <div className="ia-msg ia-msg-assistant">
-                      <span className="ia-msg-num ia-num-green">2</span>
-                      <div className="ia-msg-bubble ia-bubble-assistant">
-                        <span className="ia-msg-role">ASSISTANT</span>
-                        <p>Đúng rồi. Bây giờ em thử nghĩ thêm: nếu một xe ô tô chạy trên đường thẳng và luôn giữ nguyên tốc độ, em nghĩ là gọi đó là loại chuyển động gì?</p>
-                      </div>
-                      <div className="ia-msg-label ia-label-scaf">SCAF <X size={10} /></div>
-                    </div>
+                        {/* Message 2 - Assistant */}
+                        <div className="ia-msg ia-msg-assistant">
+                          <span className="ia-msg-num ia-num-green">2</span>
+                          <div className="ia-msg-bubble ia-bubble-assistant">
+                            <span className="ia-msg-role">ASSISTANT</span>
+                            <p>Đúng rồi. Bây giờ em thử nghĩ thêm: nếu một xe ô tô chạy trên đường thẳng và luôn giữ nguyên tốc độ, em nghĩ là gọi đó là loại chuyển động gì?</p>
+                          </div>
+                          <div className="ia-msg-label ia-label-scaf">SCAF <X size={10} /></div>
+                        </div>
 
-                    {/* Message 3 - User */}
-                    <div className="ia-msg ia-msg-user">
-                      <div className="ia-msg-bubble ia-bubble-user">
-                        <span className="ia-msg-role">USER</span>
-                        <p>Chuyển động đều a?</p>
+                        {/* Message 3 - User */}
+                        <div className="ia-msg ia-msg-user">
+                          <div className="ia-msg-bubble ia-bubble-user">
+                            <span className="ia-msg-role">USER</span>
+                            <p>Chuyển động đều a?</p>
+                          </div>
+                          <span className="ia-msg-num">3</span>
+                          <div className="ia-msg-label ia-label-ok"><Check size={10} /> OK <X size={10} /></div>
+                        </div>
                       </div>
-                      <span className="ia-msg-num">3</span>
-                      <div className="ia-msg-label ia-label-ok"><Check size={10} /> OK <X size={10} /></div>
-                    </div>
-                  </div>
 
-                  {/* Pagination */}
-                  <div className="ia-chat-pagination">
-                    <button className="ia-page-btn">← Previous</button>
-                    <span className="ia-page-info">1 / 90</span>
-                    <button className="ia-page-btn">Next →</button>
-                  </div>
-                  </>
+                      {/* Pagination */}
+                      <div className="ia-chat-pagination">
+                        <button className="ia-page-btn">← Previous</button>
+                        <span className="ia-page-info">1 / 90</span>
+                        <button className="ia-page-btn">Next →</button>
+                      </div>
+                    </>
                   )}
 
                   {iaActiveTab === 'unassigned' && (
-                  <>
-                  <div className="ia-unassigned-list">
-                    {[
-                      { id: 'conv-4', preview: 'Thầy ơi, lực ma sát là gì ạ? Em nghe nói có 2 loại...', turns: 6, subject: 'PHYSICAL' },
-                      { id: 'conv-5', preview: 'Cho em hỏi cách tính diện tích hình thang ạ?', turns: 4, subject: 'MATH' },
-                      { id: 'conv-7', preview: 'Em không hiểu phản ứng oxi hóa khử, giải thích giúp em...', turns: 8, subject: 'CHEM' },
-                      { id: 'conv-9', preview: 'Anh ơi giải giúp em bài toán xác suất này...', turns: 5, subject: 'MATH' },
-                      { id: 'conv-12', preview: 'Quang hợp là gì ạ? Cây xanh hấp thụ ánh sáng như nào?', turns: 7, subject: 'BIO' },
-                      { id: 'conv-15', preview: 'Cho em hỏi về thuyết tương đối của Einstein...', turns: 10, subject: 'PHYSICAL' },
-                    ].map((conv) => (
-                      <div key={conv.id} className="ia-unassigned-item">
-                        <div className="ia-unassigned-info">
-                          <div className="ia-unassigned-top">
-                            <span className="ia-unassigned-id">{conv.id}</span>
-                            <span className={`ia-unassigned-subject ia-subj-${conv.subject.toLowerCase()}`}>{conv.subject}</span>
-                            <span className="ia-unassigned-turns">{conv.turns} turns</span>
+                    <>
+                      <div className="ia-unassigned-list">
+                        {[
+                          { id: 'conv-4', preview: 'Thầy ơi, lực ma sát là gì ạ? Em nghe nói có 2 loại...', turns: 6, subject: 'PHYSICAL' },
+                          { id: 'conv-5', preview: 'Cho em hỏi cách tính diện tích hình thang ạ?', turns: 4, subject: 'MATH' },
+                          { id: 'conv-7', preview: 'Em không hiểu phản ứng oxi hóa khử, giải thích giúp em...', turns: 8, subject: 'CHEM' },
+                          { id: 'conv-9', preview: 'Anh ơi giải giúp em bài toán xác suất này...', turns: 5, subject: 'MATH' },
+                          { id: 'conv-12', preview: 'Quang hợp là gì ạ? Cây xanh hấp thụ ánh sáng như nào?', turns: 7, subject: 'BIO' },
+                          { id: 'conv-15', preview: 'Cho em hỏi về thuyết tương đối của Einstein...', turns: 10, subject: 'PHYSICAL' },
+                        ].map((conv) => (
+                          <div key={conv.id} className="ia-unassigned-item">
+                            <div className="ia-unassigned-info">
+                              <div className="ia-unassigned-top">
+                                <span className="ia-unassigned-id">{conv.id}</span>
+                                <span className={`ia-unassigned-subject ia-subj-${conv.subject.toLowerCase()}`}>{conv.subject}</span>
+                                <span className="ia-unassigned-turns">{conv.turns} turns</span>
+                              </div>
+                              <p className="ia-unassigned-preview">{conv.preview}</p>
+                            </div>
+                            <button className="ia-assign-btn">Assign to me</button>
                           </div>
-                          <p className="ia-unassigned-preview">{conv.preview}</p>
-                        </div>
-                        <button className="ia-assign-btn">Assign to me</button>
+                        ))}
                       </div>
-                    ))}
-                  </div>
 
-                  <div className="ia-chat-pagination">
-                    <button className="ia-page-btn">← Previous</button>
-                    <span className="ia-page-info">1 / 15</span>
-                    <button className="ia-page-btn">Next →</button>
-                  </div>
-                  </>
+                      <div className="ia-chat-pagination">
+                        <button className="ia-page-btn">← Previous</button>
+                        <span className="ia-page-info">1 / 15</span>
+                        <button className="ia-page-btn">Next →</button>
+                      </div>
+                    </>
                   )}
                 </div>
               </div>
@@ -2244,22 +2261,9 @@ function DataPrepView() {
                       strokeDasharray="65.97 373.85" strokeDashoffset="-373.85"
                       transform="rotate(-90 100 100)" />
                   </svg>
-                  <div className="s4-donut-legend">
-                    <div className="s4-legend-item">
-                      <span className="s4-legend-dot" style={{ background: '#10b981' }}></span>
-                      <span>Gold (Excellent)</span>
-                      <strong>40%</strong>
-                    </div>
-                    <div className="s4-legend-item">
-                      <span className="s4-legend-dot" style={{ background: '#f59e0b' }}></span>
-                      <span>Needs Rewrite</span>
-                      <strong>45%</strong>
-                    </div>
-                    <div className="s4-legend-item">
-                      <span className="s4-legend-dot" style={{ background: '#ef4444' }}></span>
-                      <span>Bad (Reject)</span>
-                      <strong>15%</strong>
-                    </div>
+                  <div className="s4-donut-center">
+                    <strong>24</strong>
+                    <span>Total</span>
                   </div>
                 </div>
               </div>
@@ -2650,6 +2654,879 @@ function DataPrepView() {
         </div>
 
         {/* Action Buttons */}
+        <div className="dataprep-actions-row">
+          <button className="dataprep-btn-back" onClick={() => setCurrentStage(4)}>
+            Back
+          </button>
+          <button className="dataprep-btn-next" onClick={() => setCurrentStage(6)}>
+            Next
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderSep490Stage4 = () => {
+    const subjectGroups = [
+      { group: 'MATH', label: 'Math', count: 42, percentage: 32, color: '#2563eb' },
+      { group: 'PHYSICAL', label: 'Physical', count: 31, percentage: 24, color: '#ea580c' },
+      { group: 'CHEMISTRY', label: 'Chemistry', count: 18, percentage: 14, color: '#16a34a' },
+      { group: 'LITERATURE', label: 'Literature', count: 16, percentage: 12, color: '#9333ea' },
+      { group: 'BIOLOGY', label: 'Biology', count: 12, percentage: 9, color: '#0d9488' },
+      { group: 'OUT_OF_SCOPE', label: 'Out of scope', count: 10, percentage: 8, color: '#64748b' },
+    ];
+
+    const conversations = [
+      {
+        id: 'conv_428051',
+        subject: 'MATH',
+        messages: [
+          { role: 'user', text: 'Em khong hieu dao ham cua x^2 tinh the nao a?' },
+          { role: 'assistant', text: 'Dao ham cua x^2 la 2x.' },
+          { role: 'user', text: 'Vi sao lai la 2x a?' },
+          { role: 'assistant', text: 'Em thu nho lai cong thuc dao ham cua x^n: n*x^(n-1). Neu n = 2 thi em thay ket qua la gi?' },
+        ],
+      },
+      {
+        id: 'conv_42D67D',
+        subject: 'PHYSICAL',
+        messages: [
+          { role: 'user', text: 'Luc ma sat la gi a?' },
+          { role: 'assistant', text: 'Truoc het em thu nghi vi sao xe phanh lai dung duoc tren mat duong?' },
+          { role: 'user', text: 'Co le vi banh xe bi mat duong can lai?' },
+          { role: 'assistant', text: 'Dung huong roi. Luc can do chinh la luc ma sat, no xuat hien khi hai be mat tiep xuc va can tro chuyen dong.' },
+        ],
+      },
+      {
+        id: 'conv_42DE5T',
+        subject: 'OUT_OF_SCOPE',
+        messages: [
+          { role: 'user', text: 'Cho em dap an luon di, em dang voi.' },
+          { role: 'assistant', text: 'Dap an la 1939, em ghi vao bai nhe.' },
+        ],
+      },
+    ];
+
+    const visibleConversations = sepSubjectFilter === 'ALL'
+      ? conversations
+      : conversations.filter((item) => item.subject === sepSubjectFilter);
+    const activeConversation = visibleConversations[(classPage - 1) % Math.max(visibleConversations.length, 1)] || conversations[0];
+
+    const baseQualitySamples = [
+      {
+        id: 'sample_428051',
+        convId: 'conv_428051',
+        subject: 'MATH',
+        bucket: 'Rewrite',
+        score: 4.3,
+        issueKey: 'direct-answer',
+        issue: 'Direct answer too early',
+        errorMessageIndex: 1,
+        reason: 'Assistant gave "2x" immediately before checking whether the learner remembered the derivative rule.',
+        messages: conversations[0].messages,
+      },
+      {
+        id: 'sample_42D67D',
+        convId: 'conv_42D67D',
+        subject: 'PHYSICAL',
+        bucket: 'Gold',
+        score: 9.1,
+        issueKey: 'none',
+        issue: 'No critical issue',
+        errorMessageIndex: null,
+        reason: 'Good Socratic framing, uses a familiar braking example before defining friction.',
+        messages: conversations[1].messages,
+      },
+      {
+        id: 'sample_42DE5T',
+        convId: 'conv_42DE5T',
+        subject: 'OUT_OF_SCOPE',
+        bucket: 'Reject',
+        score: 2.1,
+        issueKey: 'low-training-value',
+        issue: 'Direct answer and low training value',
+        errorMessageIndex: 1,
+        reason: 'The reply gives the final answer directly and does not guide the learner.',
+        messages: conversations[2].messages,
+      },
+    ];
+
+    const getQualityLabel = (item) => sepQualityLabels[item.id] || (item.bucket === 'Reject' ? 'Bad' : item.bucket);
+    const qualityClass = (label) => label === 'Bad' ? 'bad' : label.toLowerCase();
+
+    const qualityDistribution = [
+      { label: 'Gold', count: 6, tone: 'emerald', summary: 'Ready for training with strong Socratic guidance.' },
+      { label: 'Rewrite', count: 14, tone: 'amber', summary: 'Needs tutor reply rewrite before evaluation.' },
+      { label: 'Bad', count: 4, tone: 'rose', summary: 'Reject or send to supervisor because quality is too low.' },
+      { label: 'Incomplete', count: 0, tone: 'slate', summary: 'Missing turns or incomplete context.' },
+    ];
+
+    const qualitySamples = Array.from({ length: 24 }, (_, idx) => {
+      const source = baseQualitySamples[idx % baseQualitySamples.length];
+      const cycle = Math.floor(idx / baseQualitySamples.length);
+      const bucket = idx < 6 ? 'Gold' : idx < 20 ? 'Rewrite' : 'Reject';
+      const issueKey = bucket === 'Gold' ? 'none' : idx % 2 === 0 ? 'direct-answer' : 'low-training-value';
+      return {
+        ...source,
+        id: `${source.id}_${idx + 1}`,
+        convId: `${source.convId}_${idx + 1}`,
+        subject: subjectGroups[idx % subjectGroups.length].group,
+        bucket,
+        score: bucket === 'Gold' ? 8.6 + (idx % 3) * 0.2 : bucket === 'Rewrite' ? 4.1 + (idx % 5) * 0.35 : 2.0 + (idx % 3) * 0.25,
+        issueKey,
+        issue: bucket === 'Gold'
+          ? 'No critical issue'
+          : issueKey === 'direct-answer'
+            ? 'Direct answer too early'
+            : 'Low training value',
+        errorMessageIndex: bucket === 'Gold' ? null : 1,
+        reason: bucket === 'Gold'
+          ? 'Good Socratic guidance and usable for training.'
+          : issueKey === 'direct-answer'
+            ? 'Assistant answers too directly before checking learner understanding.'
+            : 'The response does not guide the learner enough for training.',
+        messages: source.messages.map((msg, msgIdx) => ({
+          ...msg,
+          text: cycle === 0 ? msg.text : `${msg.text} (${subjectGroups[idx % subjectGroups.length].label} sample ${idx + 1}.${msgIdx + 1})`,
+        })),
+      };
+    });
+
+    const filteredQualitySamples = qualitySamples.filter((item) => {
+      const itemLabel = getQualityLabel(item);
+      const bucketOk = qualityTab === 'all' || itemLabel.toLowerCase() === qualityTab;
+      const errorOk = !sepSelectedError || item.issueKey === sepSelectedError;
+      return bucketOk && errorOk;
+    });
+
+    const subjectTotal = subjectGroups.reduce((sum, item) => sum + item.count, 0);
+    const qualityTotal = qualityDistribution.reduce((sum, item) => sum + item.count, 0);
+    const selectedSubject = subjectGroups.find((item) => item.group === sepSelectedDistSubject) || subjectGroups[0];
+    const selectedQuality = qualityDistribution.find((item) => item.label === sepSelectedDistQuality) || qualityDistribution[1];
+    const getQualityScore = (sampleId, rubricName, defaultScore) => sepQualityRatings[`${sampleId}-${rubricName}`] ?? defaultScore;
+
+    const rewriteRows = [
+      {
+        title: 'CONVERSATION 8',
+        user: 'Tinh dao ham cua x^2 nhu the nao?',
+        original: 'Dao ham cua x^2 la 2x.',
+        ai: 'Voi ham x^n, dao ham se la n*x^(n-1). Em thu thay n = 2 vao cong thuc do xem ket qua la gi?',
+        manual: 'Em con nho quy tac dao ham cua x^n khong? Neu thay n bang 2, em thu viet tung buoc xem sao.',
+        intent: 'REQUEST_EXPLANATION',
+        action: 'DIRECT_ANSWER',
+        expected: 'SCAFFOLDING',
+      },
+      {
+        title: 'CONVERSATION 9',
+        user: 'Chien tranh the gioi thu hai bat dau nam nao?',
+        original: 'Dap an la 1939.',
+        ai: 'Em thu nho lai su kien Duc tan cong Ba Lan. Theo em su kien do dien ra vao nam nao?',
+        manual: 'Minh cung nho lai moc su kien nhe: khi Duc tan cong Ba Lan, do la nam nao?',
+        intent: 'ASK_THEORY',
+        action: 'DIRECT_ANSWER',
+        expected: 'HINTING',
+      },
+    ];
+    const currentRewrite = rewriteRows[Math.max(0, rewriteConvIdx - 8) % rewriteRows.length];
+    const rewriteText = sepRewriteDecision === 'manual' ? currentRewrite.manual : sepRewriteDecision === 'ai' ? currentRewrite.ai : currentRewrite.original;
+
+    return (
+      <div className="dataprep-stage2 sep490-stage">
+        <div className="sub-stepper">
+          {SUB_STEPS_STAGE4.map((step, idx) => (
+            <React.Fragment key={step.num}>
+              <div
+                className={`sub-step ${step.num === currentSubStep4 ? 'active' : ''} ${step.num < currentSubStep4 ? 'completed' : ''}`}
+                onClick={() => setCurrentSubStep4(step.num)}
+              >
+                <div className="sub-step-circle">
+                  {step.num < currentSubStep4 ? <Check size={14} /> : step.num}
+                </div>
+                <div className="sub-step-label">{step.label}</div>
+              </div>
+              {idx < SUB_STEPS_STAGE4.length - 1 && <div className="sub-step-connector" />}
+            </React.Fragment>
+          ))}
+        </div>
+
+        {currentSubStep4 === 8 && (
+          <div className="sep490-grid sep490-grid-2-1 sep490-classification">
+            <section className="sep490-panel">
+              <div className="sep490-panel-head">
+                <div>
+                  <h3>Converted Dataset Preview</h3>
+                  <p>Conversation preview keeps the old chat-bubble style and supports multi-message dialogs.</p>
+                </div>
+                <span className="sep490-count">{visibleConversations.length} conversations</span>
+              </div>
+              <div className="sep490-toolbar">
+                <button className="sep490-chip active" onClick={() => setSepSubjectFilter('ALL')}>Show all</button>
+                <button className="sep490-chip" onClick={() => setClassPage((p) => (p % Math.max(visibleConversations.length, 1)) + 1)}>Next conversation</button>
+                <select className="sep490-select" value={classPage} onChange={(e) => setClassPage(Number(e.target.value))}>
+                  {visibleConversations.map((conv, idx) => <option key={conv.id} value={idx + 1}>{conv.id}</option>)}
+                </select>
+              </div>
+              <div className="sep490-chat-shell">
+                <div className="sep490-chat-head">
+                  <span className="sep490-mono">{activeConversation.id}</span>
+                  <span className="sep490-badge indigo">{activeConversation.subject}</span>
+                </div>
+                <div className="sep490-chat-body">
+                  {activeConversation.messages.map((msg, idx) => (
+                    <div key={idx} className={`sep490-chat-bubble ${msg.role}`}>
+                      <span>{msg.role === 'user' ? 'USER' : 'ASSISTANT'}</span>
+                      <p>{msg.text}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            <aside className="sep490-panel sep490-side">
+              <div className="sep490-panel-head compact">
+                <h3>Subject Classification</h3>
+                <button
+                  className="sep490-primary"
+                  onClick={() => {
+                    setSepRunningClass(true);
+                    window.setTimeout(() => setSepRunningClass(false), 700);
+                  }}
+                >
+                  <RefreshCw size={14} className={sepRunningClass ? 'sep490-spin' : ''} />
+                  Run
+                </button>
+              </div>
+              <div className="sep490-kpi">
+                <span>Total samples</span>
+                <strong>129</strong>
+              </div>
+              <button className={`sep490-filter-row ${sepSubjectFilter === 'ALL' ? 'active' : ''}`} onClick={() => { setSepSubjectFilter('ALL'); setClassPage(1); }}>
+                <span>All samples</span>
+                {sepSubjectFilter === 'ALL' && <Check size={15} />}
+              </button>
+              {subjectGroups.map((item) => (
+                <button key={item.group} className={`sep490-filter-row ${sepSubjectFilter === item.group ? 'active' : ''}`} onClick={() => { setSepSubjectFilter(item.group); setClassPage(1); }}>
+                  <span>{item.group}</span>
+                  <span>{item.percentage}% <strong>{item.count}</strong>{sepSubjectFilter === item.group && <Check size={15} />}</span>
+                </button>
+              ))}
+              <div className="sep490-note">
+                <AlertCircle size={15} />
+                Run subject classification before moving into quality and distribution checks.
+              </div>
+            </aside>
+          </div>
+        )}
+
+        {currentSubStep4 === 9 && (
+          <>
+            <section className="sep490-hero-panel">
+              <div className="sep490-icon-box"><Sparkles size={22} /></div>
+              <div>
+                <h3>Pedagogical Quality Management <span>Stage 4</span></h3>
+                <p>Review conversation quality, resolve conflicts, and prepare samples for rewrite.</p>
+              </div>
+              <button
+                className="sep490-primary"
+                onClick={() => {
+                  setSepRunningQuality(true);
+                  window.setTimeout(() => setSepRunningQuality(false), 700);
+                }}
+              >
+                <RefreshCw size={14} className={sepRunningQuality ? 'sep490-spin' : ''} />
+                Run Quality Classification
+              </button>
+            </section>
+
+            <div className="sep490-alert">
+              <Check size={15} />
+              Assignment labeling check: reviewed <strong>18</strong> / <strong>24</strong> conversations.
+            </div>
+
+            <div className="sep490-grid sep490-grid-3-1">
+              <main>
+                <div className="sep490-tabs">
+                  {[
+                    ['all', 'All', '24 HT / 96 MSG'],
+                    ['gold', 'Gold', '6 HT / 24 MSG'],
+                    ['rewrite', 'Needs Rewrite', '14 HT / 56 MSG'],
+                    ['bad', 'Bad', '4 HT / 16 MSG'],
+                  ].map(([key, label, sub]) => (
+                    <button key={key} className={qualityTab === key ? 'active' : ''} onClick={() => setQualityTab(key)}>
+                      <span>{label}</span>
+                      <small>{sub}</small>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="sep490-card-grid">
+                  {filteredQualitySamples.map((item) => {
+                    const itemLabel = getQualityLabel(item);
+                    return (
+                      <button
+                        key={item.id}
+                        className={`sep490-quality-card ${qualityClass(itemLabel)}`}
+                        onClick={() => setSepQualityModal(item)}
+                      >
+                        <div className="sep490-card-top">
+                          <span className="sep490-mono">{item.id}</span>
+                          <span className={`sep490-badge ${itemLabel === 'Gold' ? 'emerald' : itemLabel === 'Bad' ? 'rose' : itemLabel === 'Incomplete' ? 'slate' : 'amber'}`}>{itemLabel}</span>
+                        </div>
+                        <h4>{item.subject}</h4>
+                        <p>{item.issue}</p>
+                        <div className="sep490-card-meta">
+                          <span>{item.messages.length} messages</span>
+                          <strong>Score {item.score.toFixed(1)}</strong>
+                        </div>
+                        <span className="sep490-open-review">Open review</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </main>
+
+              <aside className="sep490-stack">
+                <div className="sep490-panel">
+                  <div className="sep490-panel-head compact">
+                    <h3>Review Progress</h3>
+                    <span>18 / 24</span>
+                  </div>
+                  <div className="sep490-progress"><span style={{ width: '75%' }} /></div>
+                  <p className="sep490-muted">75% of conversations have supervisor-ready quality labels.</p>
+                </div>
+                <div className="sep490-panel danger">
+                  <h3>Error Pattern</h3>
+                  {[
+                    ['direct-answer', 'Student asks theory -> AI gives direct answer', '68%'],
+                    ['low-training-value', 'Low training value or reject-level answer', '32%'],
+                  ].map(([key, label, width]) => (
+                    <button key={key} className={`sep490-error-row ${sepSelectedError === key ? 'active' : ''}`} onClick={() => setSepSelectedError(key)}>
+                      <span>{label}</span>
+                      <div className="sep490-progress rose"><span style={{ width }} /></div>
+                    </button>
+                  ))}
+                </div>
+                <div className="sep490-panel">
+                  <h3>Adjudication Guide</h3>
+                  <p className="sep490-muted">Expanded cards show exactly which message failed and why, matching the old project review flow.</p>
+                </div>
+              </aside>
+            </div>
+          </>
+        )}
+
+        {currentSubStep4 === 10 && (
+          <div className="s4-distribution sep490-distribution-old">
+            <div className="s4-dist-header">
+              <div>
+                <h3>Dataset Distribution</h3>
+                <p>Overview of subject distribution and data quality metrics.</p>
+              </div>
+              <div className="s4-dist-actions">
+                <button className="s4-btn-primary"><Download size={14} /> Export report</button>
+              </div>
+            </div>
+
+            <div className="s4-dist-stats">
+              <div className="s4-stat-card">
+                <div className="s4-stat-icon-row"><span className="s4-stat-icon s4-stat-icon-blue">#</span><span className="s4-stat-change s4-change-up">+12%</span></div>
+                <div className="s4-stat-value">{subjectTotal}</div>
+                <div className="s4-stat-label">TOTAL SAMPLES</div>
+              </div>
+              <div className="s4-stat-card">
+                <div className="s4-stat-icon-row"><span className="s4-stat-icon s4-stat-icon-purple">S</span><span className="s4-stat-badge">stable</span></div>
+                <div className="s4-stat-value">{subjectGroups.length}</div>
+                <div className="s4-stat-label">SUBJECTS</div>
+              </div>
+              <div className="s4-stat-card">
+                <div className="s4-stat-icon-row"><span className="s4-stat-icon s4-stat-icon-green">✓</span><span className="s4-stat-change s4-change-up">+2.4%</span></div>
+                <div className="s4-stat-value">{qualityTotal}</div>
+                <div className="s4-stat-label">QUALITY LABELED</div>
+              </div>
+              <div className="s4-stat-card">
+                <div className="s4-stat-icon-row"><span className="s4-stat-icon s4-stat-icon-red">!</span><span className="s4-stat-change s4-change-down">-0.5%</span></div>
+                <div className="s4-stat-value">{selectedQuality.count}</div>
+                <div className="s4-stat-label">{selectedQuality.label.toUpperCase()}</div>
+              </div>
+            </div>
+
+            <div className="s4-dist-charts">
+              <div className="s4-chart-card">
+                <h4><BarChart2 size={16} /> PHÂN BỔ THEO MÔN HỌC</h4>
+                <div className="s4-bar-chart">
+                  {subjectGroups.map((item) => (
+                    <button
+                      key={item.group}
+                      className={`s4-bar-row s4-bar-row-click ${sepSelectedDistSubject === item.group ? 'active' : ''}`}
+                      onClick={() => {
+                        setSepSelectedDistSubject(item.group);
+                        setSepSubjectFilter(item.group);
+                      }}
+                    >
+                      <span className="s4-bar-label">{item.label}</span>
+                      <div className="s4-bar-track">
+                        <div className="s4-bar-fill-dist" style={{ width: `${item.percentage * 2.4}%`, background: item.color }} />
+                      </div>
+                      <strong>{item.count}</strong>
+                    </button>
+                  ))}
+                </div>
+                <div className="s4-chart-selected">
+                  Selected: <strong>{selectedSubject.label}</strong> - {selectedSubject.count} samples ({selectedSubject.percentage}%)
+                </div>
+              </div>
+
+              <div className="s4-chart-card">
+                <h4>◷ PHÂN LOẠI CHẤT LƯỢNG</h4>
+                <div className="s4-donut-container">
+                  <svg viewBox="0 0 200 200" className="s4-donut-svg">
+                    <circle cx="100" cy="100" r="70" fill="none" stroke="#f1f5f9" strokeWidth="28" />
+                    <circle className={`s4-donut-segment ${sepSelectedDistQuality === 'Gold' ? 'active' : ''}`} onMouseEnter={() => setSepSelectedDistQuality('Gold')} cx="100" cy="100" r="70" fill="none" stroke="#10b981" strokeWidth="28" strokeDasharray="175.93 263.89" strokeDashoffset="0" transform="rotate(-90 100 100)" strokeLinecap="round" />
+                    <circle className={`s4-donut-segment ${sepSelectedDistQuality === 'Rewrite' ? 'active' : ''}`} onMouseEnter={() => setSepSelectedDistQuality('Rewrite')} cx="100" cy="100" r="70" fill="none" stroke="#f59e0b" strokeWidth="28" strokeDasharray="197.92 241.90" strokeDashoffset="-175.93" transform="rotate(-90 100 100)" />
+                    <circle className={`s4-donut-segment ${sepSelectedDistQuality === 'Bad' ? 'active' : ''}`} onMouseEnter={() => setSepSelectedDistQuality('Bad')} cx="100" cy="100" r="70" fill="none" stroke="#ef4444" strokeWidth="28" strokeDasharray="65.97 373.85" strokeDashoffset="-373.85" transform="rotate(-90 100 100)" />
+                  </svg>
+                  <div className="s4-donut-center">
+                    <strong>{qualityTotal}</strong>
+                    <span>Total</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {currentSubStep4 === 11 && (
+          <div className="sep490-rewrite">
+            <section className="sep490-panel sep490-rewrite-header">
+              <div className="sep490-panel-head">
+                <div>
+                  <h3>Rewrite Workspace</h3>
+                  <p>Review the flagged tutor turn, compare suggestions, and choose the final training response.</p>
+                </div>
+                <div className="sep490-actions">
+                  <select className="sep490-select" defaultValue="gemini">
+                    <option value="gemini">AI Judge: GEMINI</option>
+                    <option value="openai">AI Judge: OPENAI</option>
+                    <option value="deepseek">AI Judge: DEEPSEEK</option>
+                  </select>
+                  <button className="sep490-outline" onClick={() => { setSepRewriteGenerated(true); setSepRewriteDecision('ai'); }}><Sparkles size={14} /> AI fix all</button>
+                  <button className="sep490-outline" onClick={() => setSepRewriteDecision('ai')}><Check size={14} /> Quick approve all</button>
+                  <button className="sep490-primary" onClick={() => setSepRewriteDecision('ai')}><Check size={14} /> Save rewrite</button>
+                </div>
+              </div>
+              <div className="sep490-metric-grid">
+                <div><span>Need Rewrite</span><strong>10</strong></div>
+                <div><span>AI Suggestions</span><strong>{sepRewriteGenerated ? 11 : 7}</strong></div>
+                <div><span>AI Accepted</span><strong>{sepRewriteDecision === 'ai' ? 5 : 4}</strong></div>
+                <div><span>Manual Edited</span><strong>2</strong></div>
+                <div><span>Original Kept</span><strong>1</strong></div>
+              </div>
+            </section>
+
+            <div className="sep490-rewrite-workspace">
+              <aside className="sep490-panel sep490-rewrite-queue">
+                <div className="sep490-panel-head compact">
+                  <h3>Rewrite Queue</h3>
+                  <span className="sep490-pill amber">10 pending</span>
+                </div>
+                {rewriteRows.map((row, idx) => {
+                  const convNumber = idx + 8;
+                  return (
+                    <button
+                      key={row.title}
+                      className={rewriteConvIdx === convNumber ? 'active' : ''}
+                      onClick={() => setRewriteConvIdx(convNumber)}
+                    >
+                      <span>{row.title}</span>
+                      <strong>{row.intent}</strong>
+                      <small>{row.action} {'->'} {row.expected}</small>
+                    </button>
+                  );
+                })}
+                <div className="sep490-nav-pair">
+                  <button onClick={() => setRewriteConvIdx(Math.max(8, rewriteConvIdx - 1))}><ChevronLeft size={14} /> Previous</button>
+                  <button onClick={() => setRewriteConvIdx(Math.min(9, rewriteConvIdx + 1))}>Next <ChevronRight size={14} /></button>
+                </div>
+              </aside>
+
+              <main className="rw-content sep490-rw-full">
+                <div className="rw-turn-card rw-turn-rewrite">
+                  <div className="rw-turn-header">
+                    <span className="rw-turn-title">Turn #1 needs edit</span>
+                    <span className="rw-turn-badge-required">REWRITE REQUIRED</span>
+                  </div>
+                  <div className="rw-turn-tags">
+                    <span className="rw-tag rw-tag-blue">INTENT: {currentRewrite.intent}</span>
+                    <span className="rw-tag rw-tag-green">ACTION: {currentRewrite.action}</span>
+                    <span className="rw-tag rw-tag-purple">EXPECTED: {currentRewrite.expected}</span>
+                  </div>
+
+                  <div className="rw-turn-columns">
+                    <div className="rw-col">
+                      <span className="rw-col-title">STUDENT (USER)</span>
+                      <div className="rw-col-box">{currentRewrite.user}</div>
+                    </div>
+                    <div className="rw-col">
+                      <span className="rw-col-title">ORIGINAL ANSWER</span>
+                      <div className="rw-col-box">{currentRewrite.original}</div>
+                    </div>
+                    <div className="rw-col rw-col-edit">
+                      <div className="rw-col-title-row">
+                        <span className="rw-col-title">REWRITE</span>
+                        <div className="rw-edit-tabs">
+                          {[
+                            ['original', 'Original'],
+                            ['ai', 'AI'],
+                            ['manual', 'Manual'],
+                          ].map(([tab, label]) => (
+                            <button key={tab} className={`rw-edit-tab ${sepRewriteDecision === tab ? 'active' : ''}`} onClick={() => setSepRewriteDecision(tab)}>{label}</button>
+                          ))}
+                        </div>
+                      </div>
+                      {sepRewriteDecision === 'manual' ? (
+                        <textarea defaultValue={currentRewrite.manual} className="rw-col-box rw-col-editable sep490-textarea" />
+                      ) : (
+                        <div className="rw-col-box rw-col-editable">
+                          <p>{rewriteText}</p>
+                          <p className="rw-hint-text">{sepRewriteDecision === 'ai' ? 'AI suggestion is selected.' : 'Original answer is selected.'}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <button className="rw-suggest-btn" onClick={() => { setSepRewriteGenerated(true); setSepRewriteDecision('ai'); }}><Sparkles size={14} /> Generate AI suggestion for this turn</button>
+                </div>
+
+                <div className="rw-turn-card rw-turn-context">
+                  <div className="rw-turn-header">
+                    <span className="rw-turn-title">Turn #2 (context only)</span>
+                    <span className="rw-turn-badge-ok">VALID - NO EDIT</span>
+                  </div>
+                  <div className="rw-turn-columns rw-turn-cols-2">
+                    <div className="rw-col">
+                      <span className="rw-col-title">STUDENT</span>
+                      <div className="rw-col-box">Hinh nhu nam 1939 a.</div>
+                    </div>
+                    <div className="rw-col">
+                      <span className="rw-col-title">AI TUTOR</span>
+                      <div className="rw-col-box">Chinh xac. Su kien do thuong duoc xem la moc khoi dau cua cuoc chien.</div>
+                    </div>
+                  </div>
+                </div>
+              </main>
+            </div>
+          </div>
+        )}
+
+        <div className="dataprep-actions-row">
+          <button className="dataprep-btn-back" onClick={() => {
+            if (currentSubStep4 > 8) setCurrentSubStep4(currentSubStep4 - 1);
+            else setCurrentStage(3);
+          }}>
+            Back
+          </button>
+          <button className="dataprep-btn-next" onClick={() => {
+            if (currentSubStep4 < 11) setCurrentSubStep4(currentSubStep4 + 1);
+            else setCurrentStage(5);
+          }}>
+            Next
+          </button>
+        </div>
+
+        {sepQualityModal && (
+          <div className="compare-modal-overlay" onClick={() => setSepQualityModal(null)}>
+            <div className="sep490-modal sep490-quality-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="sep490-modal-head">
+                <div>
+                  <h3>Quality Review & Pedagogy Finalization</h3>
+                  <p>{sepQualityModal.id} - {sepQualityModal.subject} - score {sepQualityModal.score.toFixed(1)}</p>
+                </div>
+                <button className="compare-close-btn" onClick={() => setSepQualityModal(null)}><X size={14} /> Close</button>
+              </div>
+
+              <div className="sep490-quality-modal-body">
+                <section className="sep490-modal-thread">
+                  <div className="sep490-review-section-title">Conversation thread</div>
+                  {sepQualityModal.errorMessageIndex !== null && (
+                    <div className="sep490-error-banner">
+                      <AlertCircle size={16} />
+                      <div>
+                        <strong>Error detected at Turn #{sepQualityModal.errorMessageIndex + 1}</strong>
+                        <span>{sepQualityModal.reason}</span>
+                      </div>
+                    </div>
+                  )}
+                  {sepQualityModal.messages.map((msg, idx) => (
+                    <div key={idx} className={`sep490-review-bubble ${msg.role} ${idx === sepQualityModal.errorMessageIndex ? 'error' : ''}`}>
+                      <div>
+                        <span>{msg.role === 'user' ? 'Câu hỏi - Học sinh' : 'Câu trả lời - AI Tutor'}</span>
+                        <em>#Turn {idx + 1}</em>
+                      </div>
+                      <div className="sep490-message-tags">
+                        <b>{msg.role === 'user' ? 'QUESTION' : 'ANSWER'}</b>
+                        <b>{sepQualityModal.subject}</b>
+                        {idx === sepQualityModal.errorMessageIndex && <b className="danger">ERROR</b>}
+                      </div>
+                      <p>{msg.text}</p>
+                      {idx === sepQualityModal.errorMessageIndex && <small>{sepQualityModal.reason}</small>}
+                    </div>
+                  ))}
+                </section>
+
+                <aside className="sep490-modal-score">
+                  <div className="sep490-quality-classifier">
+                    <strong>Phân loại chất lượng hội thoại</strong>
+                    <div>
+                      {['Gold', 'Rewrite', 'Bad', 'Incomplete'].map((label) => {
+                        const active = getQualityLabel(sepQualityModal) === label;
+                        return (
+                          <button
+                            key={label}
+                            className={`${qualityClass(label)} ${active ? 'active' : ''}`}
+                            onClick={() => setSepQualityLabels((prev) => ({ ...prev, [sepQualityModal.id]: label }))}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="sep490-rubric-grid">
+                    {[
+                      ['Factuality', sepQualityModal.bucket === 'Reject' ? 2 : 5, 'Correct knowledge, no hallucination.'],
+                      ['Socratic method', sepQualityModal.bucket === 'Gold' ? 5 : 2, 'Guides learner instead of answering too soon.'],
+                      ['Encouragement', sepQualityModal.bucket === 'Reject' ? 2 : 5, 'Patient and motivating tone.'],
+                      ['Vietnamese quality', 5, 'Natural wording and clean grammar.'],
+                      ['Completeness', sepQualityModal.bucket === 'Reject' ? 2 : 4, 'No broken or missing context.'],
+                      ['Training readiness', Math.max(1, Math.round(sepQualityModal.score / 2)), 'Ready to use for fine-tuning.'],
+                    ].map(([name, defaultScore, desc]) => {
+                      const score = getQualityScore(sepQualityModal.id, name, defaultScore);
+                      return (
+                        <div key={name} className="sep490-rubric-card">
+                          <div><strong>{name}</strong><span>{score}/5</span></div>
+                          <div className="sep490-star-buttons" aria-label={`${score} out of 5`}>
+                            {Array.from({ length: 5 }, (_, starIndex) => (
+                              <button
+                                key={starIndex}
+                                className={starIndex < score ? 'filled' : ''}
+                                onClick={() => setSepQualityRatings((prev) => ({ ...prev, [`${sepQualityModal.id}-${name}`]: starIndex + 1 }))}
+                              >
+                                {'★'}
+                              </button>
+                            ))}
+                          </div>
+                          <small>{desc}</small>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="sep490-alert amber">
+                    <FileText size={15} />
+                    <span>{sepQualityModal.reason}</span>
+                  </div>
+
+                  <div className="sep490-review-checks">
+                    <strong>Detected issues</strong>
+                    {['Wrong fact', 'Direct answer too early', 'Needs supervisor review', 'Vietnamese wording issue'].map((label) => (
+                      <label key={label}>
+                        <input type="checkbox" defaultChecked={sepQualityModal.bucket !== 'Gold' && label !== 'Wrong fact'} />
+                        {label}
+                      </label>
+                    ))}
+                  </div>
+
+                  <label className="sep490-review-note">
+                    Detailed note
+                    <textarea defaultValue={sepQualityModal.reason} />
+                  </label>
+
+                  <div className="sep490-actions end">
+                    <button className="sep490-outline" onClick={() => { setSepQualityModal(null); setCurrentSubStep4(11); }}>Mark Rewrite</button>
+                    <button className="sep490-primary" onClick={() => setSepQualityModal(null)}>Save quality decision</button>
+                  </div>
+                </aside>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderSep490Stage5 = () => {
+    const evalItems = [
+      {
+        id: 'eval_428051',
+        subject: 'MATH',
+        score: 4.3,
+        recommendation: 'Reject',
+        conflict: true,
+        messages: [
+          ['Student', 'Em khong hieu dao ham cua x^2 tinh the nao a?'],
+          ['AI Tutor', 'Hay nho quy tac dao ham cua x^n va thu ap dung voi n = 2.'],
+          ['Student', 'Hinh nhu la n*x^(n-1) a?'],
+        ],
+        models: [
+          { name: 'GEMINI', rec: 'Reject', score: 4.0, color: 'rose' },
+          { name: 'DEEPSEEK', rec: 'Pass', score: 7.8, color: 'emerald' },
+          { name: 'OPENAI', rec: 'Need Rewrite', score: 6.2, color: 'amber' },
+        ],
+      },
+      {
+        id: 'eval_42D67D',
+        subject: 'PHYSICAL',
+        score: 8.7,
+        recommendation: 'Pass',
+        conflict: false,
+        messages: [
+          ['Student', 'Luc ma sat la gi a?'],
+          ['AI Tutor', 'Em thu nghi xem vi sao xe phanh lai dung duoc tren mat duong?'],
+        ],
+        models: [
+          { name: 'GEMINI', rec: 'Pass', score: 8.8, color: 'emerald' },
+          { name: 'DEEPSEEK', rec: 'Pass', score: 8.4, color: 'emerald' },
+        ],
+      },
+    ];
+
+    const visibleEvalItems = evalItems.filter((item) => {
+      const matchesRec = sepEvalRecommendation === 'all' || item.recommendation === sepEvalRecommendation;
+      const matchesConflict = !sepEvalConflictOnly || item.conflict;
+      const matchesScore = item.score >= Number(sepEvalMinScore || 0);
+      return matchesRec && matchesConflict && matchesScore;
+    });
+
+    return (
+      <div className="dataprep-stage2 sep490-stage">
+        <div className="sep490-grid sep490-grid-1-2">
+          <section className="sep490-panel">
+            <div className="sep490-panel-head compact">
+              <h3>AI Judge Setup</h3>
+              <span className="sep490-pill indigo">1-3 models</span>
+            </div>
+            <div className="sep490-check-list">
+              {[
+                ['gemini', 'Gemini (Flash 1.5)', 'Default education judge'],
+                ['openai', 'OpenAI (GPT-4o)', 'High precision verification'],
+                ['deepseek', 'Deepseek (R1/V3)', 'Advanced logic judge'],
+              ].map(([key, label, desc]) => (
+                <label key={key} className={judgeModels[key] ? 'active' : ''}>
+                  <input
+                    type="checkbox"
+                    checked={judgeModels[key]}
+                    onChange={() => setJudgeModels((prev) => ({ ...prev, [key]: !prev[key] }))}
+                  />
+                  <span><strong>{label}</strong><small>{desc}</small></span>
+                </label>
+              ))}
+            </div>
+            <label className="sep490-field">
+              Context window
+              <select className="sep490-select">
+                <option>n - 2 to n + 2 (recommended)</option>
+                <option>n - 1 to n + 1</option>
+                <option>Whole conversation</option>
+              </select>
+            </label>
+            <button
+              className="sep490-primary full"
+              onClick={() => {
+                setSepRunningEval(true);
+                window.setTimeout(() => setSepRunningEval(false), 900);
+              }}
+            >
+              <Sparkles size={14} className={sepRunningEval ? 'sep490-spin' : ''} />
+              Start AI verification & refinement
+            </button>
+          </section>
+
+          <section className="sep490-panel">
+            <div className="sep490-panel-head compact">
+              <h3>Verification Status</h3>
+              <span className="sep490-pill emerald">{sepRunningEval ? 'RUNNING' : 'COMPLETE'}</span>
+            </div>
+            <div className="sep490-progress large"><span style={{ width: sepRunningEval ? '62%' : '100%' }} /></div>
+            <div className="sep490-status-grid">
+              <div><span>Evaluated</span><strong>{sepRunningEval ? 6 : 9}</strong></div>
+              <div><span>Processing</span><strong>{sepRunningEval ? 3 : 0}</strong></div>
+              <div><span>Auto refined</span><strong>2</strong></div>
+              <div><span>API errors</span><strong>0</strong></div>
+              <div><span>Conflicts</span><strong className="amber">1</strong></div>
+            </div>
+          </section>
+        </div>
+
+        <div className="sep490-filterbar">
+          <span><Sparkles size={14} /> Auto filter</span>
+          <label>Recommendation
+            <select value={sepEvalRecommendation} onChange={(e) => setSepEvalRecommendation(e.target.value)}>
+              <option value="all">All</option>
+              <option value="Pass">Pass</option>
+              <option value="Need Rewrite">Need Rewrite</option>
+              <option value="Reject">Reject</option>
+            </select>
+          </label>
+          <label>Min score
+            <input type="number" min="0" max="10" step="0.5" value={sepEvalMinScore} onChange={(e) => setSepEvalMinScore(e.target.value)} />
+          </label>
+          <label className="sep490-inline-check">
+            <input type="checkbox" checked={sepEvalConflictOnly} onChange={() => setSepEvalConflictOnly(!sepEvalConflictOnly)} />
+            Conflict only
+          </label>
+          <button className="sep490-outline"><RefreshCw size={14} /> Refresh</button>
+        </div>
+
+        <div className="sep490-stack">
+          {visibleEvalItems.length === 0 ? (
+            <div className="sep490-empty">No evaluation result matches this filter.</div>
+          ) : visibleEvalItems.map((item) => (
+            <section key={item.id} className="sep490-eval-card">
+              <div className="sep490-eval-head" onClick={() => setEvalExpanded(evalExpanded === item.id ? false : item.id)}>
+                <div>
+                  <span className={`sep490-score ${item.score >= 8 ? 'emerald' : item.score >= 6 ? 'amber' : 'rose'}`}>{item.score.toFixed(1)} / 10</span>
+                  {item.conflict && <span className="sep490-badge rose">Conflict</span>}
+                  <strong>{item.subject} - sample #{item.id.slice(-6).toUpperCase()}</strong>
+                </div>
+                <div>
+                  <span className={`sep490-badge ${item.recommendation === 'Pass' ? 'emerald' : item.recommendation === 'Reject' ? 'rose' : 'amber'}`}>Suggest: {item.recommendation}</span>
+                  <ChevronDown size={16} style={{ transform: evalExpanded === item.id ? 'rotate(180deg)' : 'none' }} />
+                </div>
+              </div>
+              {evalExpanded === item.id && (
+                <div className="sep490-eval-body">
+                  <div className="sep490-context">
+                    <div className="sep490-context-head">
+                      <span>Conversation context</span>
+                      <button>Score history</button>
+                    </div>
+                    {item.messages.map(([role, content], idx) => (
+                      <p key={idx} className={idx === 1 ? 'target' : ''}><strong>{role}:</strong> {content}{idx === 1 && <span>TARGET</span>}</p>
+                    ))}
+                  </div>
+
+                  <div className="sep490-model-grid">
+                    {item.models.map((model) => (
+                      <div key={model.name} className={`sep490-model-card ${model.color}`}>
+                        <div><strong>{model.name}</strong><span>{model.rec} ({model.score.toFixed(1)})</span></div>
+                        <dl>
+                          <dt>Factuality</dt><dd>{Math.min(10, model.score + 0.8).toFixed(1)}/10</dd>
+                          <dt>Socratic</dt><dd>{Math.max(0, model.score - 0.6).toFixed(1)}/10</dd>
+                          <dt>Vietnamese quality</dt><dd>{Math.min(10, model.score + 1).toFixed(1)}/10</dd>
+                          <dt>Training readiness</dt><dd>{model.score.toFixed(1)}/10</dd>
+                        </dl>
+                        <p>The response is checked for correctness, Socratic guidance, context fit, and training readiness.</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </section>
+          ))}
+        </div>
+
         <div className="dataprep-actions-row">
           <button className="dataprep-btn-back" onClick={() => setCurrentStage(4)}>
             Back
@@ -3265,8 +4142,8 @@ function DataPrepView() {
       {currentStage === 1 && renderStage1()}
       {currentStage === 2 && renderStage2()}
       {currentStage === 3 && renderStage3()}
-      {currentStage === 4 && renderStage4()}
-      {currentStage === 5 && renderStage5()}
+      {currentStage === 4 && renderSep490Stage4()}
+      {currentStage === 5 && renderSep490Stage5()}
       {currentStage === 6 && renderStage6()}
 
       {/* Compare Groups Modal */}
@@ -3443,10 +4320,10 @@ function DataPrepView() {
               <table className="cl-table">
                 <thead>
                   <tr>
-                    <th style={{width:'40%'}}>CONVERSATION</th>
-                    <th style={{width:'20%'}}>GEMINI LABEL</th>
-                    <th style={{width:'20%'}}>DEEPSEEK LABEL</th>
-                    <th style={{width:'20%'}}>STATUS</th>
+                    <th style={{ width: '40%' }}>CONVERSATION</th>
+                    <th style={{ width: '20%' }}>GEMINI LABEL</th>
+                    <th style={{ width: '20%' }}>DEEPSEEK LABEL</th>
+                    <th style={{ width: '20%' }}>STATUS</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -3546,7 +4423,7 @@ function DataPrepView() {
               </div>
 
               <div className="ct-form-group">
-                <label className="ct-checkbox-label" style={{marginTop: '8px'}}>
+                <label className="ct-checkbox-label" style={{ marginTop: '8px' }}>
                   <input type="checkbox" />
                   <strong>Tắt gợi ý nhãn từ AI (Disable AI Suggestion)</strong>
                 </label>
