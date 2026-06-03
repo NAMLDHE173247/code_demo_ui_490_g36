@@ -18,7 +18,8 @@ import {
   AlertCircle,
   Filter,
   Download,
-  RefreshCw
+  RefreshCw,
+  MessageSquare
 } from 'lucide-react';
 import '../dataprep.css';
 
@@ -212,8 +213,9 @@ function DataPrepView() {
 
   /* Stage 2 pagination - by conversations */
   const [currentPage, setCurrentPage] = useState(1);
-  const [convsPerPage, setConvsPerPage] = useState(3);
+  const [convsPerPage, setConvsPerPage] = useState(10);
   const [expandedConvs, setExpandedConvs] = useState({});
+  const [expandedCells, setExpandedCells] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
 
   /* Find K state */
@@ -237,6 +239,16 @@ function DataPrepView() {
   const [compareSlot2, setCompareSlot2] = useState(null);
   const [activeCompareDropdown, setActiveCompareDropdown] = useState(null);
 
+  /* Clustering Options Popup */
+  const [showClusterOptionsPopup, setShowClusterOptionsPopup] = useState(false);
+
+  /* Data Cleaning Pipeline Popup */
+  const [showCleaningPopup, setShowCleaningPopup] = useState(false);
+  const [cleaningPopupView, setCleaningPopupView] = useState('settings'); // 'settings' | 'preview'
+
+  /* Conversation Detail Popup */
+  const [selectedConv, setSelectedConv] = useState(null);
+
   /* Stage 3 state */
   const SUB_STEPS_STAGE3 = [
     { num: 5, label: 'Auto Labeling' },
@@ -245,10 +257,14 @@ function DataPrepView() {
   ];
   const [currentSubStep3, setCurrentSubStep3] = useState(5);
   const [stage3Page, setStage3Page] = useState(1);
+  const [stage3PerPage, setStage3PerPage] = useState(10);
+  const [stage3Search, setStage3Search] = useState('');
   const [showCompareLabels, setShowCompareLabels] = useState(false);
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
   const [iaActiveTab, setIaActiveTab] = useState('assignment');
   const [showUserGuide, setShowUserGuide] = useState(false);
+  const [selectedGroup3, setSelectedGroup3] = useState(null);
+  const [selectedConv3, setSelectedConv3] = useState(null);
 
   /* Stage 4 state */
   const SUB_STEPS_STAGE4 = [
@@ -367,6 +383,20 @@ function DataPrepView() {
         </React.Fragment>
       );
     });
+  };
+
+  /* Page numbers with ellipsis */
+  const getPageNumbers = (current, total) => {
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    const pages = [];
+    pages.push(1);
+    if (current > 3) pages.push('...');
+    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+      pages.push(i);
+    }
+    if (current < total - 2) pages.push('...');
+    pages.push(total);
+    return pages;
   };
 
   /* ---- Stage 1 Content ---- */
@@ -535,6 +565,36 @@ function DataPrepView() {
       setExpandedConvs(all);
     };
 
+    /* Click-to-expand cell */
+    const toggleCell = (cellKey) => {
+      setExpandedCells(prev => ({ ...prev, [cellKey]: !prev[cellKey] }));
+    };
+
+    /* Search highlight helper */
+    const highlightSearch = (text, query) => {
+      if (!query || !query.trim()) return text;
+      const parts = text.split(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
+      return parts.map((part, i) =>
+        part.toLowerCase() === query.toLowerCase()
+          ? <span key={i} className="search-highlight">{part}</span>
+          : part
+      );
+    };
+
+    /* Cleaning status per conversation (mock) */
+    const CONV_STATUS = {
+      conv_001: 'clean',
+      conv_002: 'fixed',
+      conv_003: 'clean',
+      conv_004: 'clean',
+      conv_005: 'fixed',
+      conv_006: 'clean',
+      conv_007: 'clean',
+      conv_008: 'clean',
+      conv_009: 'fixed',
+      conv_010: 'clean',
+    };
+
     return (
       <>
         {/* Sub-stepper */}
@@ -557,16 +617,60 @@ function DataPrepView() {
 
         {currentSubStep === 1 && (
         <>
-        {/* Main content: preview + sidebar */}
-        <div className="stage2-layout">
-          {/* Left: Converted Dataset Preview */}
-          <div className="stage2-main">
+        {/* Post-conversion Statistics — shown above table after cleaning is applied */}
+        {cleaningApplied && (
+          <div className="post-stats-card">
+            <div className="post-stats-header">
+              <Check size={16} className="post-stats-icon" />
+              <span>Post-conversion Statistics</span>
+            </div>
+            <div className="post-stats-grid">
+              <div className="post-stat-item">
+                <div className="post-stat-label">Converted Records</div>
+                <div className="post-stat-value">120</div>
+              </div>
+              <div className="post-stat-item">
+                <div className="post-stat-label">Source Messages</div>
+                <div className="post-stat-value">586</div>
+              </div>
+            </div>
+
+            <div className="cleaning-report-title">CLEANING REPORT</div>
+            <div className="post-stats-grid">
+              <div className="post-stat-item">
+                <div className="post-stat-label">Error keywords</div>
+                <div className="post-stat-value cleaning-red">-0</div>
+              </div>
+              <div className="post-stat-item">
+                <div className="post-stat-label">Length</div>
+                <div className="post-stat-value cleaning-red">-0</div>
+              </div>
+              <div className="post-stat-item">
+                <div className="post-stat-label">Unclosed &lt;think&gt;</div>
+                <div className="post-stat-value cleaning-red">-0</div>
+              </div>
+              <div className="post-stat-item highlight">
+                <div className="post-stat-label">Final Count</div>
+                <div className="post-stat-value cleaning-green">120</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Full-width content (no sidebar) */}
+        <div className="cluster-fullwidth">
             <div className="preview-header">
               <h3>Converted Dataset Preview</h3>
-              <span className="preview-count">
-                {pageMsgCount} messages · Showing {startConvIdx + 1}-{Math.min(startConvIdx + convsPerPage, filteredTotal)} of {filteredTotal} conversations
-                {searchQuery && ` (filtered from ${totalConvs})`}
-              </span>
+              <div className="preview-header-right">
+                <span className="preview-count">
+                  {pageMsgCount} messages · Showing {startConvIdx + 1}-{Math.min(startConvIdx + convsPerPage, filteredTotal)} of {filteredTotal} conversations
+                  {searchQuery && ` (filtered from ${totalConvs})`}
+                </span>
+                <button className="cleaning-pipeline-trigger-btn" onClick={() => setShowCleaningPopup(true)}>
+                  <Settings size={16} />
+                  Data Cleaning Pipeline
+                </button>
+              </div>
             </div>
 
             <div className="preview-toolbar">
@@ -585,10 +689,6 @@ function DataPrepView() {
                   <option value="15">15</option>
                 </select>
               </div>
-              <div className="toolbar-actions">
-                <button className="toolbar-btn-sm" onClick={expandAll} title="Expand all">Expand All</button>
-                <button className="toolbar-btn-sm" onClick={collapseAll} title="Collapse all">Collapse All</button>
-              </div>
               <div className="toolbar-search">
                 <input
                   type="text"
@@ -604,70 +704,65 @@ function DataPrepView() {
               </div>
             </div>
 
-            <div className="preview-table-wrapper">
-              <table className="preview-table conv-grouped">
+            <div className="preview-table-wrapper cluster-table-full">
+              <table className="preview-table conv-grouped" style={{ tableLayout: 'fixed', width: '100%' }}>
                 <thead>
                   <tr>
-                    <th className="col-conv-id">Conversation ID</th>
-                    <th className="col-msg-num">#</th>
-                    <th>User</th>
-                    <th>Assistant</th>
+                    <th style={{ width: '4%', textAlign: 'center' }}>STT</th>
+                    <th style={{ width: '10%', textAlign: 'center' }}>Conv ID</th>
+                    <th style={{ width: '3%', textAlign: 'center' }}>#</th>
+                    <th style={{ width: '30%' }}>User</th>
+                    <th style={{ width: '43%' }}>Assistant</th>
+                    <th style={{ width: '8%', textAlign: 'center' }}></th>
                   </tr>
                 </thead>
                 <tbody>
                   {pageConvs.length === 0 && (
                     <tr>
-                      <td colSpan={4} style={{ textAlign: 'center', padding: '32px', color: '#94a3b8' }}>
+                      <td colSpan={6} style={{ textAlign: 'center', padding: '32px', color: '#94a3b8' }}>
                         No conversations match your search.
                       </td>
                     </tr>
                   )}
                   {pageConvs.map((conv, convPageIdx) => {
-                    const isExpanded = expandedConvs[conv.id] !== undefined ? expandedConvs[conv.id] : true;
                     const groupClass = (startConvIdx + convPageIdx) % 2 === 1 ? 'conv-group-alt' : '';
+                    const convGlobalIdx = startConvIdx + convPageIdx + 1;
+                    const status = CONV_STATUS[conv.id] || 'clean';
 
-                    if (!isExpanded) {
-                      /* Collapsed: show summary row */
-                      return (
-                        <tr key={conv.id} className={`conv-row conv-first conv-last conv-collapsed ${groupClass}`}>
-                          <td className="col-conv-id-cell">
-                            <button className="conv-toggle-btn" onClick={() => toggleConv(conv.id)} title="Expand">
-                              <ChevronRight size={14} />
-                            </button>
-                            <span className="conv-id-badge">{conv.id}</span>
-                            <span className="conv-msg-count">{conv.messages.length} messages</span>
-                          </td>
-                          <td className="col-msg-num-cell">—</td>
-                          <td className="cell-truncate" title={conv.messages[0].user}>
-                            {conv.messages[0].user}
-                          </td>
-                          <td className="cell-truncate" title={conv.messages[0].assistant}>
-                            {conv.messages[0].assistant}
-                          </td>
-                        </tr>
-                      );
-                    }
-
-                    /* Expanded: show all messages */
-                    return conv.messages.map((msg, msgIdx) => (
+                    return (
                       <tr
-                        key={`${conv.id}-${msgIdx}`}
-                        className={`conv-row ${msgIdx === 0 ? 'conv-first' : ''} ${msgIdx === conv.messages.length - 1 ? 'conv-last' : ''} ${groupClass}`}
+                        key={conv.id}
+                        className={`conv-row conv-first conv-last ${groupClass} conv-clickable`}
                       >
-                        {msgIdx === 0 && (
-                          <td className="col-conv-id-cell" rowSpan={conv.messages.length}>
-                            <button className="conv-toggle-btn" onClick={() => toggleConv(conv.id)} title="Collapse">
-                              <ChevronDown size={14} />
-                            </button>
-                            <span className="conv-id-badge">{conv.id}</span>
-                            <span className="conv-msg-count">{conv.messages.length} messages</span>
-                          </td>
-                        )}
-                        <td className="col-msg-num-cell">#{msgIdx + 1}</td>
-                        <td className="cell-truncate" title={msg.user}>{msg.user}</td>
-                        <td className="cell-truncate" title={msg.assistant}>{msg.assistant}</td>
+                        <td className="col-conv-num-cell">{convGlobalIdx}</td>
+                        <td className="col-conv-id-cell">
+                          <span className="conv-id-badge">{conv.id}</span>
+                          <span className="conv-msg-count">{conv.messages.length} messages</span>
+                          {cleaningApplied && (
+                            <span className={`conv-status-badge badge-${status}`}>
+                              {status === 'clean' ? '✓ Clean' : status === 'fixed' ? '🔧 Fixed' : '✗ Removed'}
+                            </span>
+                          )}
+                        </td>
+                        <td className="col-msg-num-cell">{conv.messages.length}</td>
+                        <td className="cell-text-col">
+                          <div className="cell-truncate">
+                            {highlightSearch(conv.messages[0].user, searchQuery)}
+                          </div>
+                        </td>
+                        <td className="cell-text-col">
+                          <div className="cell-truncate">
+                            {highlightSearch(conv.messages[0].assistant, searchQuery)}
+                          </div>
+                        </td>
+                        <td className="col-action-cell">
+                          <button className="view-detail-btn" onClick={() => setSelectedConv(conv)}>
+                            <Eye size={14} />
+                            Detail
+                          </button>
+                        </td>
                       </tr>
-                    ));
+                    );
                   })}
                 </tbody>
               </table>
@@ -676,160 +771,319 @@ function DataPrepView() {
             {/* Pagination */}
             <div className="preview-pagination">
               <button
-                className="pagination-btn"
+                className="pagination-arrow"
                 disabled={currentPage <= 1}
                 onClick={() => setCurrentPage(currentPage - 1)}
               >
-                Previous
+                ‹
               </button>
-              <span className="pagination-info">Page {currentPage} / {totalPages || 1}</span>
+              {getPageNumbers(currentPage, totalPages).map((page, idx) =>
+                page === '...' ? (
+                  <span key={`ellipsis-${idx}`} className="pagination-ellipsis">...</span>
+                ) : (
+                  <button
+                    key={page}
+                    className={`pagination-page-btn ${page === currentPage ? 'active' : ''}`}
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </button>
+                )
+              )}
               <button
-                className="pagination-btn"
+                className="pagination-arrow"
                 disabled={currentPage >= totalPages}
                 onClick={() => setCurrentPage(currentPage + 1)}
               >
-                Next
+                ›
               </button>
             </div>
-          </div>
+        </div>
 
-          {/* Right: Sidebar */}
-          <div className="stage2-sidebar">
-            {/* Data Cleaning Pipeline */}
-            <div className="cleaning-pipeline-card">
-              <div className="cleaning-pipeline-row">
-                <span className="cleaning-label">Data Cleaning Pipeline</span>
-                <label className="cleaning-toggle">
-                  <span className="toggle-text">Enable</span>
-                  <input
-                    type="checkbox"
-                    checked={cleaningEnabled}
-                    onChange={() => setCleaningEnabled(!cleaningEnabled)}
-                  />
-                  <span className="toggle-checkmark"></span>
-                </label>
+        {/* Conversation Detail Popup */}
+        {selectedConv && (
+          <div className="cluster-popup-overlay" onClick={() => setSelectedConv(null)}>
+            <div className="cluster-popup-content conv-detail-popup" onClick={(e) => e.stopPropagation()}>
+              <div className="cluster-popup-header">
+                <div className="cluster-popup-header-left">
+                  <MessageSquare size={20} />
+                  <div>
+                    <h2>Conversation Detail</h2>
+                    <p>{selectedConv.id} · {selectedConv.messages.length} messages</p>
+                  </div>
+                </div>
+                <button className="cluster-popup-close-btn" onClick={() => setSelectedConv(null)}>
+                  <X size={18} />
+                  Close
+                </button>
               </div>
 
-              {cleaningEnabled && (
-                <div className="cleaning-options">
-                  {/* Checkbox: Xóa thẻ think hoàn chỉnh */}
-                  <label className="cleaning-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={removeCompleteThink}
-                      onChange={() => setRemoveCompleteThink(!removeCompleteThink)}
-                    />
-                    <span className="checkbox-mark"></span>
-                    <span className="checkbox-label">Xóa các cặp thẻ &lt;think&gt;...&lt;/think&gt; hoàn chỉnh</span>
-                  </label>
-
-                  {/* Checkbox: Vá lỗi thẻ think */}
-                  <label className="cleaning-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={removeUnclosedThink}
-                      onChange={() => setRemoveUnclosedThink(!removeUnclosedThink)}
-                    />
-                    <span className="checkbox-mark"></span>
-                    <span className="checkbox-label">Vá lỗi thẻ &lt;think&gt; bị thiếu thẻ đóng/mở (Regex + AI)</span>
-                  </label>
-
-                  {/* Checkbox: Lọc từ khóa lỗi */}
-                  <label className="cleaning-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={removeErrorKeywords}
-                      onChange={() => setRemoveErrorKeywords(!removeErrorKeywords)}
-                    />
-                    <span className="checkbox-mark"></span>
-                    <span className="checkbox-label">Lọc bỏ các từ khóa lỗi quy định</span>
-                  </label>
-
-                  {/* Min / Max chars */}
-                  <div className="cleaning-inputs-row">
-                    <div className="cleaning-input-group">
-                      <label>Min chars assistant</label>
-                      <input type="number" value={minChars} onChange={(e) => setMinChars(e.target.value)} />
+              <div className="conv-detail-body">
+                {selectedConv.messages.map((msg, idx) => (
+                  <div key={idx} className="conv-detail-pair">
+                    <div className="conv-detail-label">#{idx + 1}</div>
+                    <div className="conv-detail-msg conv-detail-user">
+                      <div className="conv-detail-role">👤 User</div>
+                      <div className="conv-detail-text">{msg.user}</div>
                     </div>
-                    <div className="cleaning-input-group">
-                      <label>Max chars assistant</label>
-                      <input type="number" value={maxChars} onChange={(e) => setMaxChars(e.target.value)} />
+                    <div className="conv-detail-msg conv-detail-assistant">
+                      <div className="conv-detail-role">🤖 Assistant</div>
+                      <div className="conv-detail-text">{msg.assistant}</div>
                     </div>
                   </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
-                  {/* Min pairs */}
-                  <div className="cleaning-input-group" style={{ maxWidth: '50%' }}>
-                    <label>Số cặp hỏi đáp tối thiểu:</label>
-                    <input type="number" value={minPairs} onChange={(e) => setMinPairs(e.target.value)} />
+        {/* Data Cleaning Pipeline Popup (merged with Preview) */}
+        {showCleaningPopup && (
+          <div className="cluster-popup-overlay" onClick={() => { setShowCleaningPopup(false); setCleaningPopupView('settings'); }}>
+            <div className={`cluster-popup-content cleaning-popup-content ${cleaningPopupView === 'preview' ? 'cleaning-popup-wide' : ''}`} onClick={(e) => e.stopPropagation()}>
+              <div className="cluster-popup-header">
+                <div className="cluster-popup-header-left">
+                  <Settings size={20} />
+                  <div>
+                    <h2>{cleaningPopupView === 'settings' ? 'Data Cleaning Pipeline' : '🔍 Cleaning Preview'}</h2>
+                    <p>{cleaningPopupView === 'settings' ? 'Configure cleaning rules, character limits, and preview changes before applying' : 'Xem trước kết quả làm sạch dữ liệu — file gốc không bị thay đổi'}</p>
                   </div>
+                </div>
+                <button className="cluster-popup-close-btn" onClick={() => { setShowCleaningPopup(false); setCleaningPopupView('settings'); }}>
+                  <X size={18} />
+                  Close
+                </button>
+              </div>
 
-                  {/* Preview button */}
-                  <button
-                    className="cleaning-accept-btn"
-                    onClick={() => { setShowPreviewModal(true); setPreviewTab('before'); }}
-                  >
-                    <Eye size={16} />
-                    Preview & Apply Cleaning
-                  </button>
+              {/* ===== VIEW: Settings ===== */}
+              {cleaningPopupView === 'settings' && (
+                <div className="cluster-popup-body">
+                  {/* Enable toggle section */}
+                  <div className="cluster-popup-section">
+                    <div className="cleaning-pipeline-row">
+                      <span className="cleaning-label">Data Cleaning Pipeline</span>
+                      <label className="cleaning-toggle">
+                        <span className="toggle-text">Enable</span>
+                        <input
+                          type="checkbox"
+                          checked={cleaningEnabled}
+                          onChange={() => setCleaningEnabled(!cleaningEnabled)}
+                        />
+                        <span className="toggle-checkmark"></span>
+                      </label>
+                    </div>
+
+                    {cleaningEnabled && (
+                      <div className="cleaning-options">
+                        {/* Checkbox: Xóa thẻ think hoàn chỉnh */}
+                        <label className="cleaning-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={removeCompleteThink}
+                            onChange={() => setRemoveCompleteThink(!removeCompleteThink)}
+                          />
+                          <span className="checkbox-mark"></span>
+                          <span className="checkbox-label">Xóa các cặp thẻ &lt;think&gt;...&lt;/think&gt; hoàn chỉnh</span>
+                        </label>
+
+                        {/* Checkbox: Vá lỗi thẻ think */}
+                        <label className="cleaning-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={removeUnclosedThink}
+                            onChange={() => setRemoveUnclosedThink(!removeUnclosedThink)}
+                          />
+                          <span className="checkbox-mark"></span>
+                          <span className="checkbox-label">Vá lỗi thẻ &lt;think&gt; bị thiếu thẻ đóng/mở (Regex + AI)</span>
+                        </label>
+
+                        {/* Checkbox: Lọc từ khóa lỗi */}
+                        <label className="cleaning-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={removeErrorKeywords}
+                            onChange={() => setRemoveErrorKeywords(!removeErrorKeywords)}
+                          />
+                          <span className="checkbox-mark"></span>
+                          <span className="checkbox-label">Lọc bỏ các từ khóa lỗi quy định</span>
+                        </label>
+
+                        {/* Min / Max chars */}
+                        <div className="cleaning-inputs-row">
+                          <div className="cleaning-input-group">
+                            <label>Min chars assistant</label>
+                            <input type="number" value={minChars} onChange={(e) => setMinChars(e.target.value)} />
+                          </div>
+                          <div className="cleaning-input-group">
+                            <label>Max chars assistant</label>
+                            <input type="number" value={maxChars} onChange={(e) => setMaxChars(e.target.value)} />
+                          </div>
+                        </div>
+
+                        {/* Min pairs */}
+                        <div className="cleaning-input-group" style={{ maxWidth: '50%' }}>
+                          <label>Số cặp hỏi đáp tối thiểu:</label>
+                          <input type="number" value={minPairs} onChange={(e) => setMinPairs(e.target.value)} />
+                        </div>
+
+                        {/* Preview button — switches to preview view */}
+                        <button
+                          className="cleaning-accept-btn"
+                          onClick={() => { setCleaningPopupView('preview'); setPreviewTab('before'); }}
+                        >
+                          <Eye size={16} />
+                          Preview & Apply Cleaning
+                        </button>
+                      </div>
+                    )}
+
+                    <button className="reset-btn" onClick={() => {
+                      setCleaningApplied(false);
+                      setCleaningEnabled(false);
+                      setRemoveErrorKeywords(true);
+                      setRemoveUnclosedThink(true);
+                      setRemoveCompleteThink(false);
+                      setMinChars('5');
+                      setMaxChars('4000');
+                      setMinPairs('1');
+                    }}>
+                      <RotateCcw size={14} />
+                      Reset to Original
+                    </button>
+                  </div>
                 </div>
               )}
 
-              <button className="reset-btn" onClick={() => {
-                setCleaningApplied(false);
-                setCleaningEnabled(false);
-                setRemoveErrorKeywords(true);
-                setRemoveUnclosedThink(true);
-                setRemoveCompleteThink(false);
-                setMinChars('5');
-                setMaxChars('4000');
-                setMinPairs('1');
-              }}>
-                <RotateCcw size={14} />
-                Reset to Original
-              </button>
+              {/* ===== VIEW: Preview ===== */}
+              {cleaningPopupView === 'preview' && (
+                <>
+                  {/* Tabs */}
+                  <div className="preview-modal-tabs">
+                    <button
+                      className={`preview-tab ${previewTab === 'before' ? 'active' : ''}`}
+                      onClick={() => setPreviewTab('before')}
+                    >
+                      📄 Before ({PREVIEW_BEFORE.length})
+                    </button>
+                    <button
+                      className={`preview-tab ${previewTab === 'after' ? 'active' : ''}`}
+                      onClick={() => setPreviewTab('after')}
+                    >
+                      ✅ After ({PREVIEW_AFTER.length})
+                    </button>
+                    <button
+                      className={`preview-tab tab-removed ${previewTab === 'removed' ? 'active' : ''}`}
+                      onClick={() => setPreviewTab('removed')}
+                    >
+                      🗑️ Removed ({PREVIEW_REMOVED.length})
+                    </button>
+                  </div>
+
+                  {/* Summary bar */}
+                  <div className="preview-modal-summary">
+                    <span className="summary-tag summary-total">Tổng: {PREVIEW_BEFORE.length} conversations</span>
+                    <span className="summary-tag summary-kept">Giữ lại: {PREVIEW_AFTER.length}</span>
+                    <span className="summary-tag summary-fixed">Đã sửa: {PREVIEW_AFTER.filter(r => r.status === 'fixed').length}</span>
+                    <span className="summary-tag summary-removed">Loại bỏ: {PREVIEW_REMOVED.length}</span>
+                  </div>
+
+                  {/* Tab Content */}
+                  <div className="preview-modal-body">
+                    {previewTab === 'before' && (
+                      <table className="preview-modal-table">
+                        <thead>
+                          <tr>
+                            <th>Conv ID</th>
+                            <th>Status</th>
+                            <th>User</th>
+                            <th>Assistant (trước)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {PREVIEW_BEFORE.map((row) => (
+                            <tr key={row.id} className={row.status === 'has-issue' ? 'row-issue' : 'row-clean'}>
+                              <td><span className="conv-id-badge">{row.id}</span></td>
+                              <td>
+                                {row.issue
+                                  ? <span className="status-badge badge-issue">{row.issue}</span>
+                                  : <span className="status-badge badge-clean">Clean</span>
+                                }
+                              </td>
+                              <td className="cell-text-col"><div className="cell-truncate">{row.user}</div></td>
+                              <td className="cell-text-col"><div className="cell-truncate">{row.assistant}</div></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+
+                    {previewTab === 'after' && (
+                      <table className="preview-modal-table">
+                        <thead>
+                          <tr>
+                            <th>Conv ID</th>
+                            <th>Action</th>
+                            <th>User</th>
+                            <th>Assistant (sau)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {PREVIEW_AFTER.map((row) => (
+                            <tr key={row.id} className={row.status === 'fixed' ? 'row-fixed' : 'row-clean'}>
+                              <td><span className="conv-id-badge">{row.id}</span></td>
+                              <td><span className={`status-badge ${row.status === 'fixed' ? 'badge-fixed' : 'badge-clean'}`}>{row.action}</span></td>
+                              <td className="cell-text-col"><div className="cell-truncate">{row.user}</div></td>
+                              <td className="cell-text-col"><div className="cell-truncate">{row.assistant}</div></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+
+                    {previewTab === 'removed' && (
+                      <table className="preview-modal-table">
+                        <thead>
+                          <tr>
+                            <th>Conv ID</th>
+                            <th>Lý do loại bỏ</th>
+                            <th>User</th>
+                            <th>Assistant</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {PREVIEW_REMOVED.map((row) => (
+                            <tr key={row.id} className="row-removed">
+                              <td><span className="conv-id-badge">{row.id}</span></td>
+                              <td><span className="status-badge badge-removed">{row.reason}</span></td>
+                              <td className="cell-text-col"><div className="cell-truncate">{row.user}</div></td>
+                              <td className="cell-text-col"><div className="cell-truncate">{row.assistant}</div></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+
+                  {/* Footer */}
+                  <div className="preview-modal-footer">
+                    <button className="modal-cancel-btn" onClick={() => setCleaningPopupView('settings')}>
+                      <ChevronLeft size={16} />
+                      Quay lại cài đặt
+                    </button>
+                    <button className="modal-confirm-btn" onClick={() => {
+                      setCleaningApplied(true);
+                      setShowCleaningPopup(false);
+                      setCleaningPopupView('settings');
+                    }}>
+                      <Check size={16} />
+                      Xác nhận & Áp dụng
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
-
-            {/* Post-conversion Statistics — shown after Accept */}
-            {cleaningApplied && (
-              <div className="post-stats-card">
-                <div className="post-stats-header">
-                  <Check size={16} className="post-stats-icon" />
-                  <span>Post-conversion Statistics</span>
-                </div>
-                <div className="post-stats-grid">
-                  <div className="post-stat-item">
-                    <div className="post-stat-label">Converted Records</div>
-                    <div className="post-stat-value">120</div>
-                  </div>
-                  <div className="post-stat-item">
-                    <div className="post-stat-label">Source Messages</div>
-                    <div className="post-stat-value">586</div>
-                  </div>
-                </div>
-
-                <div className="cleaning-report-title">CLEANING REPORT</div>
-                <div className="post-stats-grid">
-                  <div className="post-stat-item">
-                    <div className="post-stat-label">Error keywords</div>
-                    <div className="post-stat-value cleaning-red">-0</div>
-                  </div>
-                  <div className="post-stat-item">
-                    <div className="post-stat-label">Length</div>
-                    <div className="post-stat-value cleaning-red">-0</div>
-                  </div>
-                  <div className="post-stat-item">
-                    <div className="post-stat-label">Unclosed &lt;think&gt;</div>
-                    <div className="post-stat-value cleaning-red">-0</div>
-                  </div>
-                  <div className="post-stat-item highlight">
-                    <div className="post-stat-label">Final Count</div>
-                    <div className="post-stat-value cleaning-green">120</div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
-        </div>
+        )}
         </>
         )}
 
@@ -978,15 +1232,21 @@ function DataPrepView() {
           ];
 
           return (
-          <div className="stage2-layout cluster-layout">
-            {/* Left: Dataset Preview */}
-            <div className="stage2-main">
+          <>
+            {/* Full-width Dataset Preview */}
+            <div className="cluster-fullwidth">
               <div className="preview-header">
                 <h3>Converted Dataset Preview</h3>
-                <span className="preview-count">
-                  {pageMsgCount} messages · Showing {startConvIdx + 1}-{Math.min(startConvIdx + convsPerPage, filteredTotal)} of {filteredTotal} conversations
-                  {searchQuery && ` (filtered from ${totalConvs})`}
-                </span>
+                <div className="preview-header-right">
+                  <span className="preview-count">
+                    {pageMsgCount} messages · Showing {startConvIdx + 1}-{Math.min(startConvIdx + convsPerPage, filteredTotal)} of {filteredTotal} conversations
+                    {searchQuery && ` (filtered from ${totalConvs})`}
+                  </span>
+                  <button className="cluster-options-trigger-btn" onClick={() => setShowClusterOptionsPopup(true)}>
+                    <Settings size={16} />
+                    Clustering Options
+                  </button>
+                </div>
               </div>
 
               <div className="preview-toolbar">
@@ -1024,7 +1284,7 @@ function DataPrepView() {
                 </div>
               </div>
 
-              <div className="preview-table-wrapper">
+              <div className="preview-table-wrapper cluster-table-full">
                 <table className="preview-table conv-grouped">
                   <thead>
                     <tr>
@@ -1047,7 +1307,6 @@ function DataPrepView() {
                       const groupClass = (startConvIdx + convPageIdx) % 2 === 1 ? 'conv-group-alt' : '';
 
                       if (!isExpanded) {
-                        /* Collapsed: show summary row */
                         return (
                           <tr key={conv.id} className={`conv-row conv-first conv-last conv-collapsed ${groupClass}`}>
                             <td className="col-conv-id-cell">
@@ -1058,17 +1317,16 @@ function DataPrepView() {
                               <span className="conv-msg-count">{conv.messages.length} messages</span>
                             </td>
                             <td className="col-msg-num-cell">—</td>
-                            <td className="cell-truncate" title={conv.messages[0].user}>
-                              {conv.messages[0].user}
+                            <td className="cell-text-col" title={conv.messages[0].user}>
+                              <div className="cell-truncate">{conv.messages[0].user}</div>
                             </td>
-                            <td className="cell-truncate" title={conv.messages[0].assistant}>
-                              {conv.messages[0].assistant}
+                            <td className="cell-text-col" title={conv.messages[0].assistant}>
+                              <div className="cell-truncate">{conv.messages[0].assistant}</div>
                             </td>
                           </tr>
                         );
                       }
 
-                      /* Expanded: show all messages */
                       return conv.messages.map((msg, msgIdx) => (
                         <tr
                           key={`${conv.id}-${msgIdx}`}
@@ -1084,8 +1342,8 @@ function DataPrepView() {
                             </td>
                           )}
                           <td className="col-msg-num-cell">#{msgIdx + 1}</td>
-                          <td className="cell-truncate" title={msg.user}>{msg.user}</td>
-                          <td className="cell-truncate" title={msg.assistant}>{msg.assistant}</td>
+                          <td className="cell-text-col" title={msg.user}><div className="cell-truncate">{msg.user}</div></td>
+                          <td className="cell-text-col" title={msg.assistant}><div className="cell-truncate">{msg.assistant}</div></td>
                         </tr>
                       ));
                     })}
@@ -1096,101 +1354,136 @@ function DataPrepView() {
               {/* Pagination */}
               <div className="preview-pagination">
                 <button
-                  className="pagination-btn"
+                  className="pagination-arrow"
                   disabled={currentPage <= 1}
                   onClick={() => setCurrentPage(currentPage - 1)}
                 >
-                  Previous
+                  ‹
                 </button>
-                <span className="pagination-info">Page {currentPage} / {totalPages || 1}</span>
+                {getPageNumbers(currentPage, totalPages || 1).map((page, idx) =>
+                  page === '...' ? (
+                    <span key={`ellipsis-${idx}`} className="pagination-ellipsis">...</span>
+                  ) : (
+                    <button
+                      key={page}
+                      className={`pagination-page-btn ${page === currentPage ? 'active' : ''}`}
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </button>
+                  )
+                )}
                 <button
-                  className="pagination-btn"
+                  className="pagination-arrow"
                   disabled={currentPage >= totalPages}
                   onClick={() => setCurrentPage(currentPage + 1)}
                 >
-                  Next
+                  ›
                 </button>
               </div>
             </div>
 
-            {/* Right: Clustering Sidebar */}
-            <div className="stage2-sidebar cluster-sidebar">
-              <div className="cleaning-pipeline-card">
-                <h3 className="cluster-card-title">Clustering Parameters</h3>
-                <div className="cleaning-input-group" style={{ marginBottom: 8 }}>
-                  <label>Target K (Clusters)</label>
-                  <input type="number" value={targetK} onChange={(e) => setTargetK(e.target.value)} />
-                </div>
-                <p className="cluster-recommend">Recommended K: <strong>14</strong> (stable plateau: silhouette remains strong while WCSS has flattened)</p>
-                <div className="cleaning-inputs-row" style={{ marginBottom: 12 }}>
-                  <div className="cleaning-input-group">
-                    <label>DBSCAN EPS</label>
-                    <input type="number" step="0.1" value={clusterEps} onChange={(e) => setClusterEps(e.target.value)} />
-                  </div>
-                  <div className="cleaning-input-group">
-                    <label>Min Samples</label>
-                    <input type="number" value={clusterMinSamples} onChange={(e) => setClusterMinSamples(e.target.value)} />
-                  </div>
-                </div>
-                <button className="cluster-run-btn" onClick={() => setClusterRan(true)}>
-                  <Sparkles size={16} />
-                  Cluster
-                </button>
-              </div>
-
-              {clusterRan && (
-                <>
-                  <div className="cleaning-pipeline-card">
-                    <div className="sim-header">
-                      <span className="sim-label">Similarity Threshold (for Deduplicate)</span>
-                      <span className="sim-value">{simThreshold.toFixed(3)}</span>
+            {/* Clustering Options Popup */}
+            {showClusterOptionsPopup && (
+              <div className="cluster-popup-overlay" onClick={() => setShowClusterOptionsPopup(false)}>
+                <div className="cluster-popup-content" onClick={(e) => e.stopPropagation()}>
+                  <div className="cluster-popup-header">
+                    <div className="cluster-popup-header-left">
+                      <Settings size={20} />
+                      <div>
+                        <h2>Clustering Options</h2>
+                        <p>Configure clustering parameters, filter noise, and review group statistics</p>
+                      </div>
                     </div>
-                    <input
-                      type="range" min="0" max="1" step="0.001"
-                      value={simThreshold}
-                      onChange={(e) => setSimThreshold(parseFloat(e.target.value))}
-                      className="sim-slider"
-                    />
-                    <div className="cluster-action-btns">
-                      <button className="cluster-btn-noise">Remove Noise</button>
-                      <button className="cluster-btn-dedup">Deduplicate</button>
-                    </div>
-                    <button className="reset-filter-btn">Reset Filter</button>
+                    <button className="cluster-popup-close-btn" onClick={() => setShowClusterOptionsPopup(false)}>
+                      <X size={18} />
+                      Close
+                    </button>
                   </div>
 
-                  <div className="cleaning-pipeline-card">
-                    <div className="cluster-stats-header">
-                      <span className="cluster-stats-title">Cluster Statistics</span>
-                      <button className="compare-btn" onClick={() => setShowCompareModal(true)}>
-                        <Eye size={14} />
-                        Compare Groups
+                  <div className="cluster-popup-body">
+                    {/* Clustering Parameters */}
+                    <div className="cluster-popup-section">
+                      <h3 className="cluster-card-title">Clustering Parameters</h3>
+                      <div className="cleaning-input-group" style={{ marginBottom: 8 }}>
+                        <label>Target K (Clusters)</label>
+                        <input type="number" value={targetK} onChange={(e) => setTargetK(e.target.value)} />
+                      </div>
+                      <p className="cluster-recommend">Recommended K: <strong>14</strong> (stable plateau: silhouette remains strong while WCSS has flattened)</p>
+                      <div className="cleaning-inputs-row" style={{ marginBottom: 12 }}>
+                        <div className="cleaning-input-group">
+                          <label>DBSCAN EPS</label>
+                          <input type="number" step="0.1" value={clusterEps} onChange={(e) => setClusterEps(e.target.value)} />
+                        </div>
+                        <div className="cleaning-input-group">
+                          <label>Min Samples</label>
+                          <input type="number" value={clusterMinSamples} onChange={(e) => setClusterMinSamples(e.target.value)} />
+                        </div>
+                      </div>
+                      <button className="cluster-run-btn" onClick={() => setClusterRan(true)}>
+                        <Sparkles size={16} />
+                        Cluster
                       </button>
                     </div>
-                    <table className="cluster-stats-table">
-                      <thead>
-                        <tr>
-                          <th>Select</th>
-                          <th>Group</th>
-                          <th>Count</th>
-                          <th>Avg Similarity</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {CLUSTER_GROUPS.map((g, i) => (
-                          <tr key={i}>
-                            <td><input type="checkbox" /></td>
-                            <td><strong>{g.name}</strong></td>
-                            <td className="count-cell">{g.count}</td>
-                            <td className="sim-cell">{g.sim.toFixed(4)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+
+                    {clusterRan && (
+                      <>
+                        {/* Similarity Threshold */}
+                        <div className="cluster-popup-section">
+                          <div className="sim-header">
+                            <span className="sim-label">Similarity Threshold (for Deduplicate)</span>
+                            <span className="sim-value">{simThreshold.toFixed(3)}</span>
+                          </div>
+                          <input
+                            type="range" min="0" max="1" step="0.001"
+                            value={simThreshold}
+                            onChange={(e) => setSimThreshold(parseFloat(e.target.value))}
+                            className="sim-slider"
+                          />
+                          <div className="cluster-action-btns">
+                            <button className="cluster-btn-noise">Remove Noise</button>
+                            <button className="cluster-btn-dedup">Deduplicate</button>
+                          </div>
+                          <button className="reset-filter-btn">Reset Filter</button>
+                        </div>
+
+                        {/* Cluster Statistics */}
+                        <div className="cluster-popup-section">
+                          <div className="cluster-stats-header">
+                            <span className="cluster-stats-title">Cluster Statistics</span>
+                            <button className="compare-btn" onClick={() => setShowCompareModal(true)}>
+                              <Eye size={14} />
+                              Compare Groups
+                            </button>
+                          </div>
+                          <table className="cluster-stats-table">
+                            <thead>
+                              <tr>
+                                <th>Select</th>
+                                <th>Group</th>
+                                <th>Count</th>
+                                <th>Avg Similarity</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {CLUSTER_GROUPS.map((g, i) => (
+                                <tr key={i}>
+                                  <td><input type="checkbox" /></td>
+                                  <td><strong>{g.name}</strong></td>
+                                  <td className="count-cell">{g.count}</td>
+                                  <td className="sim-cell">{g.sim.toFixed(4)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </>
+                    )}
                   </div>
-                </>
-              )}
-            </div>
-          </div>
+                </div>
+              </div>
+            )}
+          </>
           );
         })()}
 
@@ -1218,7 +1511,6 @@ function DataPrepView() {
       </>
     );
   };
-
   /* Demo data for preview modal */
   const PREVIEW_BEFORE = [
     { id: 'conv_003', status: 'has-issue', issue: 'Unclosed <think>', user: 'Giải thích nguyên lý bất định Heisenberg', assistant: '<think>Nguyên lý bất định... đây là câu hỏi về cơ học lượng tử' },
@@ -1240,7 +1532,44 @@ function DataPrepView() {
   ];
 
   const renderStage3 = () => {
-    const parsedData = CONVERSATIONS.flatMap(c => c.messages);
+    /* Group data with distinct colors */
+    const GROUP_DATA = [
+      { id: 7, label: 'MATH', count: 8, color: '#6366f1', bg: '#eef2ff' },
+      { id: 8, label: 'CODING', count: 9, color: '#0891b2', bg: '#ecfeff' },
+      { id: 9, label: 'PHYSICAL', count: 4, color: '#059669', bg: '#ecfdf5' },
+      { id: 10, label: 'MATH', count: 8, color: '#d97706', bg: '#fffbeb' },
+      { id: 11, label: 'MATH', count: 5, color: '#dc2626', bg: '#fef2f2' },
+      { id: 12, label: 'PHYSICAL', count: 9, color: '#7c3aed', bg: '#f5f3ff' },
+    ];
+
+    /* Build conversation list from CONVERSATIONS with group assignment */
+    const allConvRows = CONVERSATIONS.map((conv, idx) => {
+      const gIdx = idx % GROUP_DATA.length;
+      const group = GROUP_DATA[gIdx];
+      return {
+        ...conv,
+        groupId: group.id,
+        groupLabel: group.label,
+        groupColor: group.color,
+        groupBg: group.bg,
+        confidence: Math.floor(Math.random() * 10 + 90),
+      };
+    });
+
+    const filteredRows = allConvRows
+      .filter(r => !selectedGroup3 || r.groupId === selectedGroup3)
+      .filter(r => {
+        if (!stage3Search.trim()) return true;
+        const q = stage3Search.toLowerCase();
+        return r.id.toLowerCase().includes(q) ||
+          r.messages.some(m =>
+            m.user.toLowerCase().includes(q) ||
+            m.assistant.toLowerCase().includes(q)
+          );
+      });
+
+    const stage3TotalPages = Math.ceil(filteredRows.length / stage3PerPage);
+    const stage3PageRows = filteredRows.slice((stage3Page - 1) * stage3PerPage, stage3Page * stage3PerPage);
 
     return (
       <div className="dataprep-stage2">
@@ -1267,58 +1596,104 @@ function DataPrepView() {
             <div className="stage2-main">
               <div className="preview-header">
                 <h3>Converted Dataset Preview</h3>
-                <span className="record-count">Showing 1-5 of 114 records</span>
-              </div>
-              <div className="preview-filters">
-                <button className="preview-filter-btn">Show All</button>
-                <button className="preview-filter-btn">Increase Limit (5)</button>
-                <select className="preview-filter-select">
-                  <option>5 / page</option>
-                </select>
+                <span className="record-count">
+                  {selectedGroup3
+                    ? `Group ${selectedGroup3} — ${filteredRows.length} conversations`
+                    : `Showing all ${allConvRows.length} conversations`
+                  }
+                </span>
               </div>
 
-              <div className="table-container">
-                <table className="dataset-table">
+              {/* Toolbar */}
+              <div className="preview-toolbar">
+                <span className="toolbar-label">Conversations / page:</span>
+                <select
+                  className="toolbar-select"
+                  value={stage3PerPage}
+                  onChange={(e) => { setStage3PerPage(parseInt(e.target.value, 10)); setStage3Page(1); }}
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+                <input
+                  type="text"
+                  className="toolbar-search-input"
+                  placeholder="Search conversations..."
+                  value={stage3Search}
+                  onChange={(e) => { setStage3Search(e.target.value); setStage3Page(1); }}
+                />
+              </div>
+
+              <div className="preview-table-wrapper" style={{ maxHeight: '620px', overflowX: 'hidden' }}>
+                <table className="preview-table conv-grouped" style={{ tableLayout: 'fixed', width: '100%' }}>
                   <thead>
                     <tr>
-                      <th style={{ width: '25%' }}>User</th>
-                      <th style={{ width: '55%' }}>Assistant</th>
-                      <th style={{ width: '20%' }}>Auto Label</th>
+                      <th style={{ width: '3%', textAlign: 'center' }}>STT</th>
+                      <th style={{ width: '9%', textAlign: 'center' }}>Conv ID</th>
+                      <th style={{ width: '3%', textAlign: 'center' }}>#</th>
+                      <th style={{ width: '22%' }}>User</th>
+                      <th style={{ width: '42%' }}>Assistant</th>
+                      <th style={{ width: '10%', textAlign: 'center' }}>Label</th>
+                      <th style={{ width: '7%', textAlign: 'center' }}></th>
                     </tr>
                   </thead>
                   <tbody>
-                    {parsedData.slice((stage3Page - 1) * 5, stage3Page * 5).map((row, idx) => (
-                      <tr key={idx}>
-                        <td className="user-cell">
-                          <div className="cell-content expanded">{row.user}</div>
+                    {stage3PageRows.length === 0 && (
+                      <tr>
+                        <td colSpan={7} style={{ textAlign: 'center', padding: '32px', color: '#94a3b8' }}>
+                          No conversations in this group.
                         </td>
-                        <td className="assistant-cell">
-                          <div className="cell-content expanded">{row.assistant}</div>
+                      </tr>
+                    )}
+                    {stage3PageRows.map((conv, idx) => (
+                      <tr key={conv.id} className="conv-row conv-first conv-last">
+                        <td className="col-conv-num-cell">{(stage3Page - 1) * stage3PerPage + idx + 1}</td>
+                        <td className="col-conv-id-cell">
+                          <span className="conv-id-badge">{conv.id}</span>
+                          <span className="conv-msg-count">{conv.messages.length} msgs</span>
                         </td>
-                        <td>
-                          <span className="auto-label-pill">PHYSICAL 95%</span>
+                        <td className="col-msg-num-cell">{conv.messages.length}</td>
+                        <td className="cell-text-col"><div className="cell-truncate">{conv.messages[0].user}</div></td>
+                        <td className="cell-text-col"><div className="cell-truncate">{conv.messages[0].assistant}</div></td>
+                        <td style={{ textAlign: 'center' }}>
+                          <span
+                            className="auto-label-pill-colored"
+                            style={{ background: conv.groupBg, color: conv.groupColor, borderColor: conv.groupColor }}
+                          >
+                            {conv.groupLabel} {conv.confidence}%
+                          </span>
+                        </td>
+                        <td className="col-action-cell">
+                          <button className="view-detail-btn" onClick={() => setSelectedConv3(conv)}>
+                            <Eye size={14} />
+                            Detail
+                          </button>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <div className="pagination-footer">
-                <button
-                  className="pagination-btn"
-                  disabled={stage3Page === 1}
-                  onClick={() => setStage3Page(Math.max(1, stage3Page - 1))}
-                >
-                  Previous
-                </button>
-                <span className="pagination-info">Page {stage3Page} / {Math.ceil(parsedData.length / 5)}</span>
-                <button
-                  className="pagination-btn"
-                  disabled={stage3Page >= Math.ceil(parsedData.length / 5)}
-                  onClick={() => setStage3Page(stage3Page + 1)}
-                >
-                  Next
-                </button>
+
+              {/* Pagination */}
+              <div className="preview-pagination">
+                <button className="pagination-arrow" disabled={stage3Page <= 1} onClick={() => setStage3Page(stage3Page - 1)}>‹</button>
+                {getPageNumbers(stage3Page, stage3TotalPages).map((page, idx) =>
+                  page === '...' ? (
+                    <span key={`ellipsis-${idx}`} className="pagination-ellipsis">...</span>
+                  ) : (
+                    <button
+                      key={page}
+                      className={`pagination-page-btn ${page === stage3Page ? 'active' : ''}`}
+                      onClick={() => setStage3Page(page)}
+                    >
+                      {page}
+                    </button>
+                  )
+                )}
+                <button className="pagination-arrow" disabled={stage3Page >= stage3TotalPages} onClick={() => setStage3Page(stage3Page + 1)}>›</button>
               </div>
             </div>
 
@@ -1339,36 +1714,39 @@ function DataPrepView() {
 
                 <div className="label-summary">
                   <h4>Suggestion Summary</h4>
-                  <p>Generated Labels: <strong>120 / 120</strong></p>
+                  <p>Generated Labels: <strong>{allConvRows.length} / {allConvRows.length}</strong></p>
                 </div>
 
-                <div className="label-groups-table-container">
-                  <table className="label-groups-table">
-                    <thead>
-                      <tr>
-                        <th>Group</th>
-                        <th>Count</th>
-                        <th>Label</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {[7, 8, 9, 10, 11, 12].map(g => (
-                        <tr key={g}>
-                          <td>Group {g}</td>
-                          <td>{g === 7 ? 8 : g === 8 ? 9 : g === 9 ? 4 : g === 10 ? 8 : g === 11 ? 5 : 9}</td>
-                          <td>
-                            <select className="inline-label-select">
-                              <option>PHYSICAL</option>
-                              <option>MATH</option>
-                              <option>CODING</option>
-                            </select>
-                          </td>
-                          <td><button className="view-link-btn">View</button></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                {/* Group Cards */}
+                <div className="group-cards-container">
+                  {/* Show All button */}
+                  <div
+                    className={`group-card-item ${selectedGroup3 === null ? 'group-card-active' : ''}`}
+                    style={{ borderColor: '#94a3b8', '--group-accent': '#64748b' }}
+                    onClick={() => { setSelectedGroup3(null); setStage3Page(1); }}
+                  >
+                    <div className="group-card-name" style={{ color: '#64748b' }}>All Groups</div>
+                    <div className="group-card-count">{allConvRows.length}</div>
+                  </div>
+                  {GROUP_DATA.map(g => (
+                    <div
+                      key={g.id}
+                      className={`group-card-item ${selectedGroup3 === g.id ? 'group-card-active' : ''}`}
+                      style={{ borderColor: g.color, '--group-accent': g.color }}
+                      onClick={() => { setSelectedGroup3(g.id); setStage3Page(1); }}
+                    >
+                      <div className="group-card-color-dot" style={{ background: g.color }} />
+                      <div className="group-card-name" style={{ color: g.color }}>Group {g.id}</div>
+                      <div className="group-card-count">{g.count}</div>
+                      <div className="group-card-label">
+                        <select className="inline-label-select" onClick={e => e.stopPropagation()} defaultValue={g.label}>
+                          <option>PHYSICAL</option>
+                          <option>MATH</option>
+                          <option>CODING</option>
+                        </select>
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
                 <div className="label-bottom-actions">
@@ -1379,6 +1757,41 @@ function DataPrepView() {
                     <Check size={14} /> Save
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Conversation Detail Popup for Stage 3 */}
+        {selectedConv3 && (
+          <div className="cluster-popup-overlay" onClick={() => setSelectedConv3(null)}>
+            <div className="cluster-popup-content conv-detail-popup" onClick={(e) => e.stopPropagation()}>
+              <div className="cluster-popup-header">
+                <div className="cluster-popup-header-left">
+                  <MessageSquare size={20} />
+                  <div>
+                    <h2>Conversation Detail</h2>
+                    <p>{selectedConv3.id} · {selectedConv3.messages.length} messages · <span style={{ color: selectedConv3.groupColor, fontWeight: 700 }}>Group {selectedConv3.groupId} — {selectedConv3.groupLabel}</span></p>
+                  </div>
+                </div>
+                <button className="cluster-popup-close-btn" onClick={() => setSelectedConv3(null)}>
+                  <X size={18} /> Close
+                </button>
+              </div>
+              <div className="conv-detail-body">
+                {selectedConv3.messages.map((msg, idx) => (
+                  <div key={idx} className="conv-detail-pair">
+                    <div className="conv-detail-label">#{idx + 1}</div>
+                    <div className="conv-detail-msg conv-detail-user">
+                      <div className="conv-detail-role">👤 User</div>
+                      <div className="conv-detail-text">{msg.user}</div>
+                    </div>
+                    <div className="conv-detail-msg conv-detail-assistant">
+                      <div className="conv-detail-role">🤖 Assistant</div>
+                      <div className="conv-detail-text">{msg.assistant}</div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -3103,141 +3516,6 @@ function DataPrepView() {
 
   return (
     <div className="dataprep-view">
-      {/* Cleaning Preview Modal */}
-      {showPreviewModal && (
-        <div className="modal-overlay" onClick={() => setShowPreviewModal(false)}>
-          <div className="modal-content cleaning-preview-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>🔍 Cleaning Preview</h2>
-              <p className="modal-subtitle">Xem trước kết quả làm sạch dữ liệu — file gốc không bị thay đổi</p>
-              <button className="modal-close-btn" onClick={() => setShowPreviewModal(false)}>
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* Tabs */}
-            <div className="preview-modal-tabs">
-              <button
-                className={`preview-tab ${previewTab === 'before' ? 'active' : ''}`}
-                onClick={() => setPreviewTab('before')}
-              >
-                📄 Before ({PREVIEW_BEFORE.length})
-              </button>
-              <button
-                className={`preview-tab ${previewTab === 'after' ? 'active' : ''}`}
-                onClick={() => setPreviewTab('after')}
-              >
-                ✅ After ({PREVIEW_AFTER.length})
-              </button>
-              <button
-                className={`preview-tab tab-removed ${previewTab === 'removed' ? 'active' : ''}`}
-                onClick={() => setPreviewTab('removed')}
-              >
-                🗑️ Removed ({PREVIEW_REMOVED.length})
-              </button>
-            </div>
-
-            {/* Summary bar */}
-            <div className="preview-modal-summary">
-              <span className="summary-tag summary-total">Tổng: {PREVIEW_BEFORE.length} conversations</span>
-              <span className="summary-tag summary-kept">Giữ lại: {PREVIEW_AFTER.length}</span>
-              <span className="summary-tag summary-fixed">Đã sửa: {PREVIEW_AFTER.filter(r => r.status === 'fixed').length}</span>
-              <span className="summary-tag summary-removed">Loại bỏ: {PREVIEW_REMOVED.length}</span>
-            </div>
-
-            {/* Tab Content */}
-            <div className="preview-modal-body">
-              {previewTab === 'before' && (
-                <table className="preview-modal-table">
-                  <thead>
-                    <tr>
-                      <th>Conv ID</th>
-                      <th>Status</th>
-                      <th>User</th>
-                      <th>Assistant (trước)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {PREVIEW_BEFORE.map((row) => (
-                      <tr key={row.id} className={row.status === 'has-issue' ? 'row-issue' : 'row-clean'}>
-                        <td><span className="conv-id-badge">{row.id}</span></td>
-                        <td>
-                          {row.issue
-                            ? <span className="status-badge badge-issue">{row.issue}</span>
-                            : <span className="status-badge badge-clean">Clean</span>
-                          }
-                        </td>
-                        <td className="cell-truncate">{row.user}</td>
-                        <td className="cell-truncate">{row.assistant}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-
-              {previewTab === 'after' && (
-                <table className="preview-modal-table">
-                  <thead>
-                    <tr>
-                      <th>Conv ID</th>
-                      <th>Action</th>
-                      <th>User</th>
-                      <th>Assistant (sau)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {PREVIEW_AFTER.map((row) => (
-                      <tr key={row.id} className={row.status === 'fixed' ? 'row-fixed' : 'row-clean'}>
-                        <td><span className="conv-id-badge">{row.id}</span></td>
-                        <td><span className={`status-badge ${row.status === 'fixed' ? 'badge-fixed' : 'badge-clean'}`}>{row.action}</span></td>
-                        <td className="cell-truncate">{row.user}</td>
-                        <td className="cell-truncate">{row.assistant}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-
-              {previewTab === 'removed' && (
-                <table className="preview-modal-table">
-                  <thead>
-                    <tr>
-                      <th>Conv ID</th>
-                      <th>Lý do loại bỏ</th>
-                      <th>User</th>
-                      <th>Assistant</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {PREVIEW_REMOVED.map((row) => (
-                      <tr key={row.id} className="row-removed">
-                        <td><span className="conv-id-badge">{row.id}</span></td>
-                        <td><span className="status-badge badge-removed">{row.reason}</span></td>
-                        <td className="cell-truncate">{row.user}</td>
-                        <td className="cell-truncate">{row.assistant}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="preview-modal-footer">
-              <button className="modal-cancel-btn" onClick={() => setShowPreviewModal(false)}>
-                Hủy
-              </button>
-              <button className="modal-confirm-btn" onClick={() => {
-                setCleaningApplied(true);
-                setShowPreviewModal(false);
-              }}>
-                <Check size={16} />
-                Xác nhận & Áp dụng
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Stepper */}
       <div className="dataprep-stepper">
