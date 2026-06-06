@@ -28,6 +28,8 @@ function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [registerSuccess, setRegisterSuccess] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
     if (location.pathname === '/register') {
@@ -35,42 +37,104 @@ function Auth() {
     } else {
       setIsLogin(true);
     }
+    setRegisterSuccess(false);
+    setErrorMsg('');
   }, [location]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setErrorMsg('');
     
-    // Simulate login user data with 3 roles: admin, superviver, staff
-    let role = 'staff';
-    let name = 'Staff User';
-
-    if (password === '1') {
-      if (email === 'admin' || email === 'admin@example.com') {
-        role = 'admin';
-        name = 'Admin User';
-      } else if (email === 'superviver' || email === 'superviver@example.com') {
-        role = 'superviver';
-        name = 'Supervisor User';
-      } else if (email === 'staff' || email === 'staff@example.com') {
-        role = 'staff';
-        name = 'Staff User';
-      } else {
-        alert('Tài khoản test không hợp lệ. Vui lòng dùng: admin, superviver, hoặc staff với mật khẩu 1.');
-        return;
-      }
-    } else {
-      alert('Sai mật khẩu! Vui lòng nhập mật khẩu 1 để test.');
+    // --- REGISTER MODE ---
+    if (!isLogin) {
+      setRegisterSuccess(true);
       return;
     }
 
-    login({ name: name, role: role, email: email });
+    // --- LOGIN MODE ---
+    if (password !== '1') {
+      setErrorMsg('Sai mật khẩu! Vui lòng nhập mật khẩu 1 để test.');
+      return;
+    }
+
+    // Demo accounts
+    const accounts = {
+      'admin':      { name: 'Admin User',      role: 'admin',      status: 'active' },
+      'supervisor': { name: 'Supervisor User',  role: 'supervisor', status: 'active' },
+      'staff':      { name: 'Staff User',       role: 'staff',      status: 'active' },
+      'pending':    { name: 'Pending User',     role: 'staff',      status: 'pending' },
+      'disabled':   { name: 'Disabled User',    role: 'staff',      status: 'disabled' },
+    };
+
+    const account = accounts[email] || accounts[email.split('@')[0]];
+
+    if (!account) {
+      setErrorMsg('Tài khoản không tồn tại. Dùng: admin, supervisor, staff, pending hoặc disabled (pass: 1)');
+      return;
+    }
+
+    // Check status
+    if (account.status === 'pending') {
+      setErrorMsg('Tài khoản chưa được phê duyệt. Vui lòng chờ Admin phê duyệt.');
+      return;
+    }
+    if (account.status === 'disabled') {
+      setErrorMsg('Tài khoản đã bị vô hiệu hóa. Vui lòng liên hệ Admin.');
+      return;
+    }
+
+    login({ name: account.name, role: account.role, email: email, status: account.status });
     navigate('/dashboard');
   };
 
   const toggleMode = () => {
     setIsLogin(!isLogin);
+    setRegisterSuccess(false);
+    setErrorMsg('');
     navigate(isLogin ? '/register' : '/login', { replace: true });
   };
+
+  // Show success message after registration
+  if (registerSuccess) {
+    return (
+      <div className="auth-page">
+        <div className="auth-card" style={{ textAlign: 'center' }}>
+          <div style={{
+            width: '64px', height: '64px', borderRadius: '50%',
+            background: 'linear-gradient(135deg, #10b981, #34d399)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 20px', boxShadow: '0 8px 24px rgba(16,185,129,0.3)'
+          }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <h2 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '12px', color: 'var(--text-main)' }}>
+            Đăng ký thành công!
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '24px', fontSize: '14px' }}>
+            Tài khoản của bạn đã được tạo với vai trò <strong>Staff</strong>.<br/>
+            Vui lòng chờ <strong>Admin phê duyệt</strong> trước khi đăng nhập.
+          </p>
+          <div style={{
+            background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px',
+            padding: '14px 18px', marginBottom: '24px', textAlign: 'left', fontSize: '13px'
+          }}>
+            <div style={{ fontWeight: 600, color: '#b45309', marginBottom: '6px' }}>⏳ Trạng thái: Chờ phê duyệt</div>
+            <div style={{ color: '#92400e' }}>
+              Admin sẽ xem xét và phê duyệt tài khoản của bạn. Bạn sẽ nhận thông báo khi tài khoản được kích hoạt.
+            </div>
+          </div>
+          <button 
+            onClick={() => { setRegisterSuccess(false); navigate('/login', { replace: true }); }}
+            className="auth-btn"
+          >
+            Quay lại Đăng nhập
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="auth-page">
@@ -81,6 +145,23 @@ function Auth() {
             {isLogin ? 'Log in to your Learning Hub account' : 'Join Learning Hub today'}
           </p>
         </div>
+
+        {/* Error message */}
+        {errorMsg && (
+          <div style={{
+            background: errorMsg.includes('phê duyệt') ? '#fffbeb' : errorMsg.includes('vô hiệu') ? '#fef2f2' : '#fef2f2',
+            border: `1px solid ${errorMsg.includes('phê duyệt') ? '#fde68a' : '#fca5a5'}`,
+            borderRadius: '10px', padding: '12px 16px', marginBottom: '16px',
+            fontSize: '13px', lineHeight: 1.5,
+            color: errorMsg.includes('phê duyệt') ? '#92400e' : '#991b1b',
+            display: 'flex', alignItems: 'flex-start', gap: '10px'
+          }}>
+            <span style={{ fontSize: '16px', marginTop: '1px' }}>
+              {errorMsg.includes('phê duyệt') ? '⏳' : errorMsg.includes('vô hiệu') ? '🚫' : '⚠️'}
+            </span>
+            <span>{errorMsg}</span>
+          </div>
+        )}
 
         <form className="auth-form" onSubmit={handleSubmit}>
           
@@ -107,9 +188,9 @@ function Auth() {
             <input 
               type="text" 
               className="input-field" 
-              placeholder="admin / superviver / staff" 
+              placeholder={isLogin ? "admin / supervisor / staff" : "your@email.com"}
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => { setEmail(e.target.value); setErrorMsg(''); }}
               required 
             />
           </div>
@@ -124,13 +205,24 @@ function Auth() {
             <input 
               type="password" 
               className="input-field" 
-              placeholder="•••••••• (Test pass: 1)" 
+              placeholder={isLogin ? "•••••••• (Test pass: 1)" : "••••••••"}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => { setPassword(e.target.value); setErrorMsg(''); }}
               required 
             />
           </div>
           
+          {/* Demo hint for login */}
+          {isLogin && (
+            <div style={{
+              background: 'var(--bg-secondary, #f8fafc)', borderRadius: '8px',
+              padding: '10px 14px', marginTop: '4px', fontSize: '12px',
+              color: 'var(--text-secondary, #64748b)', lineHeight: 1.6
+            }}>
+              <strong>Demo accounts:</strong> admin / supervisor / staff / pending / disabled (pass: <code>1</code>)
+            </div>
+          )}
+
           <button type="submit" className="auth-btn" style={{marginTop: '16px'}}>
             {isLogin ? 'Log In' : 'Sign Up'}
           </button>
@@ -139,11 +231,11 @@ function Auth() {
         <div className="auth-divider">or {isLogin ? 'log in' : 'register'} with</div>
 
         <div className="social-login">
-          <button className="social-btn" onClick={handleSubmit} type="button">
+          <button className="social-btn" type="button">
             <GoogleIcon />
             Google
           </button>
-          <button className="social-btn" onClick={handleSubmit} type="button">
+          <button className="social-btn" type="button">
             <OutlookIcon />
             Outlook
           </button>

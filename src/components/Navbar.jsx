@@ -28,9 +28,10 @@ function Navbar() {
     <header className="header" style={{ position: 'sticky', top: 0, zIndex: 50, width: '100%' }}>
       {/* Left: Logo */}
       <div className="logo-container" onClick={() => navigate(user ? '/dashboard' : '/')} style={{ cursor: 'pointer' }}>
-        <img src="/logo.png" alt="Logo" className="app-logo" style={{ width: '40px', height: '40px' }} />
+        <img src="/logo.png" alt="Logo" className="app-logo" />
         <div className="logo-text">
-          <span className="logo-title" style={{ fontSize: '18px' }}>Learning Hub</span>
+          <span className="logo-title">Learning Hub</span>
+          <span className="logo-subtitle">AI-Powered Education</span>
         </div>
       </div>
 
