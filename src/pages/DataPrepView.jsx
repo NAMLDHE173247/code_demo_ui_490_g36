@@ -2389,13 +2389,22 @@ function DataPrepView() {
   ];
 
   const renderSep490Stage4 = () => {
-    const subjectGroups = [
-      { group: 'MATH', label: 'Math', count: 42, percentage: 32, color: '#2563eb' },
-      { group: 'PHYSICAL', label: 'Physical', count: 31, percentage: 24, color: '#ea580c' },
-      { group: 'CHEMISTRY', label: 'Chemistry', count: 18, percentage: 14, color: '#16a34a' },
-      { group: 'LITERATURE', label: 'Literature', count: 16, percentage: 12, color: '#9333ea' },
-      { group: 'BIOLOGY', label: 'Biology', count: 12, percentage: 9, color: '#0d9488' },
-      { group: 'OUT_OF_SCOPE', label: 'Out of scope', count: 10, percentage: 8, color: '#64748b' },
+    const subjectGroups = sepBalanceApplied ? [
+      { group: 'MATH', label: 'Toán học', count: 300, percentage: 42, color: '#6366f1' },
+      { group: 'PHYSICAL', label: 'Vật lý', count: 280, percentage: 40, color: '#06b6d4' },
+      { group: 'CHEMISTRY', label: 'Hóa học', count: 290, percentage: 41, color: '#10b981' },
+      { group: 'BIOLOGY', label: 'Sinh học', count: 275, percentage: 39, color: '#f59e0b' },
+      { group: 'HISTORY', label: 'Lịch sử', count: 285, percentage: 40, color: '#ef4444' },
+      { group: 'GEOGRAPHY', label: 'Địa lý', count: 270, percentage: 38, color: '#ec4899' },
+      { group: 'LITERATURE', label: 'Ngữ văn', count: 295, percentage: 41, color: '#8b5cf6' },
+    ] : [
+      { group: 'MATH', label: 'Toán học', count: 450, percentage: 85, color: '#6366f1' },
+      { group: 'PHYSICAL', label: 'Vật lý', count: 300, percentage: 70, color: '#06b6d4' },
+      { group: 'CHEMISTRY', label: 'Hóa học', count: 200, percentage: 55, color: '#10b981' },
+      { group: 'BIOLOGY', label: 'Sinh học', count: 150, percentage: 40, color: '#f59e0b' },
+      { group: 'HISTORY', label: 'Lịch sử', count: 100, percentage: 20, color: '#ef4444' },
+      { group: 'GEOGRAPHY', label: 'Địa lý', count: 80, percentage: 18, color: '#ec4899' },
+      { group: 'LITERATURE', label: 'Ngữ văn', count: 320, percentage: 65, color: '#8b5cf6' },
     ];
 
     const conversations = [
@@ -2421,7 +2430,7 @@ function DataPrepView() {
       },
       {
         id: 'conv_42DE5T',
-        subject: 'OUT_OF_SCOPE',
+        subject: 'HISTORY',
         messages: [
           { role: 'user', text: 'Cho em dap an luon di, em dang voi.' },
           { role: 'assistant', text: 'Dap an la 1939, em ghi vao bai nhe.' },
@@ -2462,7 +2471,7 @@ function DataPrepView() {
       {
         id: 'sample_42DE5T',
         convId: 'conv_42DE5T',
-        subject: 'OUT_OF_SCOPE',
+        subject: 'HISTORY',
         bucket: 'Reject',
         score: 2.1,
         issueKey: 'low-training-value',
@@ -2477,16 +2486,16 @@ function DataPrepView() {
     const qualityClass = (label) => label === 'Bad' ? 'bad' : label.toLowerCase();
 
     const qualityDistribution = [
-      { label: 'Gold', count: 6, tone: 'emerald', summary: 'Ready for training with strong Socratic guidance.' },
-      { label: 'Rewrite', count: 14, tone: 'amber', summary: 'Needs tutor reply rewrite before evaluation.' },
-      { label: 'Bad', count: 4, tone: 'rose', summary: 'Reject or send to supervisor because quality is too low.' },
+      { label: 'Gold', count: 8, tone: 'emerald', summary: 'Ready for training with strong Socratic guidance.' },
+      { label: 'Rewrite', count: 9, tone: 'amber', summary: 'Needs tutor reply rewrite before evaluation.' },
+      { label: 'Bad', count: 3, tone: 'rose', summary: 'Reject or send to supervisor because quality is too low.' },
       { label: 'Incomplete', count: 0, tone: 'slate', summary: 'Missing turns or incomplete context.' },
     ];
 
-    const qualitySamples = Array.from({ length: 24 }, (_, idx) => {
+    const qualitySamples = Array.from({ length: 20 }, (_, idx) => {
       const source = baseQualitySamples[idx % baseQualitySamples.length];
       const cycle = Math.floor(idx / baseQualitySamples.length);
-      const bucket = idx < 6 ? 'Gold' : idx < 20 ? 'Rewrite' : 'Reject';
+      const bucket = idx < 8 ? 'Gold' : idx < 17 ? 'Rewrite' : 'Reject';
       const issueKey = bucket === 'Gold' ? 'none' : idx % 2 === 0 ? 'direct-answer' : 'low-training-value';
       return {
         ...source,
@@ -2744,7 +2753,19 @@ function DataPrepView() {
                 <h3>Dataset Distribution</h3>
                 <p>Overview of subject distribution and data quality metrics.</p>
               </div>
-              <div className="s4-dist-actions">
+              <div className="s4-dist-actions" style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  className={`s4-btn-outline ${sepBalanceApplied ? 'active' : ''}`}
+                  onClick={() => setSepBalanceApplied(!sepBalanceApplied)}
+                  style={{
+                    borderColor: sepBalanceApplied ? '#10b981' : '#e2e8f0',
+                    color: sepBalanceApplied ? '#10b981' : '#334155',
+                    background: sepBalanceApplied ? '#f0fdf4' : '#ffffff',
+                  }}
+                >
+                  <Sparkles size={14} />
+                  {sepBalanceApplied ? 'Đã cân bằng' : 'Cân bằng dữ liệu'}
+                </button>
                 <button className="s4-btn-primary"><Download size={14} /> Export report</button>
               </div>
             </div>
@@ -2774,7 +2795,7 @@ function DataPrepView() {
 
             <div className="s4-dist-charts">
               <div className="s4-chart-card">
-                <h4><BarChart2 size={16} /> PHÂN BỔ THEO MÔN HỌC</h4>
+                <h4><BarChart2 size={16} /> PHÂN BỐ THEO MÔN HỌC</h4>
                 <div className="s4-bar-chart">
                   {subjectGroups.map((item) => (
                     <button
@@ -2787,9 +2808,8 @@ function DataPrepView() {
                     >
                       <span className="s4-bar-label">{item.label}</span>
                       <div className="s4-bar-track">
-                        <div className="s4-bar-fill-dist" style={{ width: `${item.percentage * 2.4}%`, background: item.color }} />
+                        <div className="s4-bar-fill-dist" style={{ width: `${item.percentage}%`, background: item.color }} />
                       </div>
-                      <strong>{item.count}</strong>
                     </button>
                   ))}
                 </div>
@@ -2799,7 +2819,7 @@ function DataPrepView() {
               </div>
 
               <div className="s4-chart-card">
-                <h4>◷ PHÂN LOẠI CHẤT LƯỢNG</h4>
+                <h4>⏳ PHÂN LOẠI CHẤT LƯỢNG</h4>
                 <div className="s4-donut-container">
                   <svg viewBox="0 0 200 200" className="s4-donut-svg">
                     <circle cx="100" cy="100" r="70" fill="none" stroke="#f1f5f9" strokeWidth="28" />
@@ -2807,10 +2827,6 @@ function DataPrepView() {
                     <circle cx="100" cy="100" r="70" fill="none" stroke="#f59e0b" strokeWidth="28" strokeDasharray="197.92 241.90" strokeDashoffset="-175.93" transform="rotate(-90 100 100)" />
                     <circle cx="100" cy="100" r="70" fill="none" stroke="#ef4444" strokeWidth="28" strokeDasharray="65.97 373.85" strokeDashoffset="-373.85" transform="rotate(-90 100 100)" />
                   </svg>
-                  <div className="s4-donut-center">
-                    <strong>{qualityTotal}</strong>
-                    <span>Total</span>
-                  </div>
                   <div className="s4-donut-legend">
                     {qualityDistribution.slice(0, 3).map(({ label, count, tone }) => (
                       <button
@@ -2820,6 +2836,11 @@ function DataPrepView() {
                           setSepSelectedDistQuality(label);
                           setQualityTab(label.toLowerCase());
                         }}
+                        style={sepSelectedDistQuality === label ? (
+                          label === 'Gold' ? { borderColor: '#bbf7d0', background: '#f0fdf4' } :
+                          label === 'Rewrite' ? { borderColor: '#fde68a', background: '#fffbeb' } :
+                          { borderColor: '#fecaca', background: '#fef2f2' }
+                        ) : {}}
                       >
                         <span className="s4-legend-dot" style={{ background: tone === 'emerald' ? '#10b981' : tone === 'amber' ? '#f59e0b' : '#ef4444' }} />
                         <span>{label === 'Gold' ? 'Gold (Excellent)' : label === 'Rewrite' ? 'Needs Rewrite' : 'Bad (Reject)'}</span>
@@ -2833,7 +2854,6 @@ function DataPrepView() {
 
           </div>
         )}
-
         {currentSubStep4 === 11 && (
           <div className="sep490-rewrite">
             <section className="sep490-panel sep490-rewrite-header">
