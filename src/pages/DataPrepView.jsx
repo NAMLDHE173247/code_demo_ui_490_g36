@@ -265,6 +265,232 @@ function DataPrepView() {
   const [showUserGuide, setShowUserGuide] = useState(false);
   const [selectedGroup3, setSelectedGroup3] = useState(null);
   const [selectedConv3, setSelectedConv3] = useState(null);
+  const [selectedIaMsgId, setSelectedIaMsgId] = useState(null);
+  const [iaMessages, setIaMessages] = useState([
+    {
+      id: 1,
+      role: 'user',
+      turn: 1,
+      text: 'Em không hiểu chuyển động thẳng đều là gì.',
+      selectedLabel: 'THEO',
+      labels: {
+        KNOWLEDGE: [
+          { name: 'OK', count: 0, icon: '✓', colorClass: 'green' },
+          { name: 'NO', count: 0, icon: '✕', colorClass: 'red' }
+        ],
+        REQUEST: [
+          { name: 'HINT', count: 0, icon: '💡' },
+          { name: 'THEO', count: 2, icon: '📖', active: true },
+          { name: 'WHY', count: 0, icon: 'ⓘ' },
+          { name: 'EASY', count: 0, icon: '⤢' }
+        ],
+        ACTION: [
+          { name: 'SKIP', count: 0, icon: '⏸' },
+          { name: 'NEXT', count: 0, icon: '→' },
+          { name: 'WAIT', count: 0, icon: '🕒' }
+        ],
+        OTHER: [
+          { name: 'ENC', count: 0, icon: '♡' },
+          { name: 'OFF', count: 0, icon: '◯' }
+        ],
+        ISSUES: [
+          { name: 'FACT_ERR', count: 0, icon: 'ⓘ' },
+          { name: 'LANG_ISSUE', count: 0, icon: '💬' }
+        ]
+      }
+    },
+    {
+      id: 2,
+      role: 'assistant',
+      turn: 1,
+      text: 'Không sao, mình đi từng bước nhé. Em thử nghĩ xem: khi nói một vật chuyển động, điều đó có nghĩa là gì?',
+      selectedLabel: 'SCAF',
+      labels: {
+        PEDAGOGY: [
+          { name: 'SCAF', count: 2, icon: '≡', colorClass: 'blue', active: true },
+          { name: 'HINT', count: 0, icon: '💡' },
+          { name: 'CLR', count: 0, icon: '📖' },
+          { name: 'LOG', count: 0, icon: '≡' },
+          { name: 'SIMP', count: 0, icon: '⤢' }
+        ],
+        NAVIGATION: [
+          { name: 'PR', count: 1, icon: '✧' },
+          { name: 'NAV', count: 0, icon: '⌲' },
+          { name: 'MOT', count: 0, icon: '♡' },
+          { name: 'REDIR', count: 0, icon: '⟲' },
+          { name: 'TRAN', count: 0, icon: '→' },
+          { name: 'WAIT', count: 0, icon: '⏸' }
+        ],
+        ISSUES: [
+          { name: 'DIR_ANS', count: 0, icon: '→' },
+          { name: 'FACT_ERR', count: 0, icon: 'ⓘ' },
+          { name: 'LANG_ISSUE', count: 0, icon: '💬' }
+        ]
+      }
+    },
+    {
+      id: 3,
+      role: 'user',
+      turn: 2,
+      text: 'Là vật đang di chuyển a.',
+      selectedLabel: 'OK',
+      labels: {
+        KNOWLEDGE: [
+          { name: 'OK', count: 3, icon: '✓', colorClass: 'green', active: true },
+          { name: 'NO', count: 0, icon: '✕', colorClass: 'red' }
+        ],
+        REQUEST: [
+          { name: 'HINT', count: 0, icon: '💡' },
+          { name: 'THEO', count: 2, icon: '📖' },
+          { name: 'WHY', count: 0, icon: 'ⓘ' },
+          { name: 'EASY', count: 0, icon: '⤢' }
+        ],
+        ACTION: [
+          { name: 'SKIP', count: 0, icon: '⏸' },
+          { name: 'NEXT', count: 0, icon: '→' },
+          { name: 'WAIT', count: 0, icon: '🕒' }
+        ],
+        OTHER: [
+          { name: 'ENC', count: 0, icon: '♡' },
+          { name: 'OFF', count: 0, icon: '◯' }
+        ],
+        ISSUES: [
+          { name: 'FACT_ERR', count: 0, icon: 'ⓘ' },
+          { name: 'LANG_ISSUE', count: 0, icon: '💬' }
+        ]
+      }
+    },
+    {
+      id: 4,
+      role: 'assistant',
+      turn: 2,
+      text: 'Đúng rồi. Bây giờ em thử nghĩ thêm: nếu một xe ô tô chạy trên đường thẳng và luôn giữ nguyên tốc độ, em nghĩ là gọi đó là loại chuyển động gì?',
+      selectedLabel: 'SCAF',
+      labels: {
+        PEDAGOGY: [
+          { name: 'SCAF', count: 2, icon: '≡', colorClass: 'blue', active: true },
+          { name: 'HINT', count: 0, icon: '💡' },
+          { name: 'CLR', count: 0, icon: '📖' },
+          { name: 'LOG', count: 0, icon: '≡' },
+          { name: 'SIMP', count: 0, icon: '⤢' }
+        ],
+        NAVIGATION: [
+          { name: 'PR', count: 1, icon: '✧' },
+          { name: 'NAV', count: 0, icon: '⌲' },
+          { name: 'MOT', count: 0, icon: '♡' },
+          { name: 'REDIR', count: 0, icon: '⟲' },
+          { name: 'TRAN', count: 0, icon: '→' },
+          { name: 'WAIT', count: 0, icon: '⏸' }
+        ],
+        ISSUES: [
+          { name: 'DIR_ANS', count: 0, icon: '→' },
+          { name: 'FACT_ERR', count: 0, icon: 'ⓘ' },
+          { name: 'LANG_ISSUE', count: 0, icon: '💬' }
+        ]
+      }
+    },
+    {
+      id: 5,
+      role: 'user',
+      turn: 3,
+      text: 'Chuyển động đều a?',
+      selectedLabel: 'OK',
+      labels: {
+        KNOWLEDGE: [
+          { name: 'OK', count: 3, icon: '✓', colorClass: 'green', active: true },
+          { name: 'NO', count: 0, icon: '✕', colorClass: 'red' }
+        ],
+        REQUEST: [
+          { name: 'HINT', count: 0, icon: '💡' },
+          { name: 'THEO', count: 0, icon: '📖' },
+          { name: 'WHY', count: 0, icon: 'ⓘ' },
+          { name: 'EASY', count: 0, icon: '⤢' }
+        ],
+        ACTION: [
+          { name: 'SKIP', count: 0, icon: '⏸' },
+          { name: 'NEXT', count: 0, icon: '→' },
+          { name: 'WAIT', count: 0, icon: '🕒' }
+        ],
+        OTHER: [
+          { name: 'ENC', count: 0, icon: '♡' },
+          { name: 'OFF', count: 0, icon: '◯' }
+        ],
+        ISSUES: [
+          { name: 'FACT_ERR', count: 0, icon: 'ⓘ' },
+          { name: 'LANG_ISSUE', count: 0, icon: '💬' }
+        ]
+      }
+    }
+  ]);
+
+  const getLabelBadgeStyle = (labelName) => {
+    const name = labelName.toUpperCase();
+    if (name === 'SCAF') {
+      return { backgroundColor: '#475569', color: '#ffffff' };
+    }
+    if (name === 'HINT') {
+      return { backgroundColor: '#f97316', color: '#ffffff' };
+    }
+    if (name === 'PR') {
+      return { backgroundColor: '#10b981', color: '#ffffff' };
+    }
+    if (name === 'OK') {
+      return { backgroundColor: '#16a34a', color: '#ffffff' };
+    }
+    if (name === 'THEO') {
+      return { backgroundColor: '#7c3aed', color: '#ffffff' };
+    }
+    return { backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1' };
+  };
+
+  const handleToggleLabel = (msgId, groupName, tagName) => {
+    setIaMessages(prev => prev.map(msg => {
+      if (msg.id !== msgId) return msg;
+      
+      const newLabels = { ...msg.labels };
+      newLabels[groupName] = newLabels[groupName].map(tag => {
+        if (tag.name === tagName) {
+          const newActive = !tag.active;
+          return {
+            ...tag,
+            active: newActive,
+            count: newActive ? tag.count + 1 : Math.max(0, tag.count - 1)
+          };
+        }
+        return tag;
+      });
+
+      return {
+        ...msg,
+        labels: newLabels
+      };
+    }));
+  };
+
+  const handleRemoveMessageSingleLabel = (msgId, tagName) => {
+    setIaMessages(prev => prev.map(msg => {
+      if (msg.id !== msgId) return msg;
+      
+      const newLabels = { ...msg.labels };
+      Object.keys(newLabels).forEach(g => {
+        newLabels[g] = newLabels[g].map(tag => {
+          if (tag.name === tagName && tag.active) {
+            return {
+              ...tag,
+              active: false,
+              count: Math.max(0, tag.count - 1)
+            };
+          }
+          return tag;
+        });
+      });
+
+      return {
+        ...msg,
+        labels: newLabels
+      };
+    }));
+  };
 
   /* Stage 4 state */
   const SUB_STEPS_STAGE4 = [
@@ -1996,55 +2222,110 @@ function DataPrepView() {
                   {iaActiveTab === 'assignment' && (
                   <>
                   <div className="ia-chat-messages">
-                    {/* Message 1 - User */}
-                    <div className="ia-msg ia-msg-user">
-                      <div className="ia-msg-bubble ia-bubble-user">
-                        <span className="ia-msg-role">USER</span>
-                        <p>Em không hiểu chuyển động thẳng đều là gì.</p>
-                      </div>
-                      <span className="ia-msg-num">1</span>
-                      <div className="ia-msg-label ia-label-theo">THEO <X size={10} /></div>
-                    </div>
+                    {iaMessages.map((msg) => {
+                      const isUser = msg.role === 'user';
+                      const isSelected = selectedIaMsgId === msg.id;
+                      
+                      const msgClass = isUser ? 'ia-msg ia-msg-user' : 'ia-msg ia-msg-assistant';
+                      const bubbleClass = isUser 
+                        ? `ia-msg-bubble ia-bubble-user ${isSelected ? 'ia-bubble-selected-user' : ''}` 
+                        : `ia-msg-bubble ia-bubble-assistant ${isSelected ? 'ia-bubble-selected-assistant' : ''}`;
+                      
+                      const numClass = isUser ? 'ia-msg-num' : 'ia-msg-num ia-num-green';
+                      
+                      const activeLabels = [];
+                      Object.keys(msg.labels).forEach((groupName) => {
+                        msg.labels[groupName].forEach((tag) => {
+                          if (tag.active) {
+                            activeLabels.push(tag.name);
+                          }
+                        });
+                      });
 
-                    {/* Message 1 - Assistant */}
-                    <div className="ia-msg ia-msg-assistant">
-                      <span className="ia-msg-num ia-num-green">1</span>
-                      <div className="ia-msg-bubble ia-bubble-assistant">
-                        <span className="ia-msg-role">ASSISTANT</span>
-                        <p>Không sao, mình đi từng bước nhé. Em thử nghĩ xem: khi nói một vật chuyển động, điều đó có nghĩa là gì?</p>
-                      </div>
-                      <div className="ia-msg-label ia-label-theo">THEO <X size={10} /></div>
-                    </div>
-
-                    {/* Message 2 - User */}
-                    <div className="ia-msg ia-msg-user">
-                      <div className="ia-msg-bubble ia-bubble-user">
-                        <span className="ia-msg-role">USER</span>
-                        <p>Là vật đang di chuyển a.</p>
-                      </div>
-                      <span className="ia-msg-num">2</span>
-                      <div className="ia-msg-label ia-label-ok"><Check size={10} /> OK <X size={10} /></div>
-                    </div>
-
-                    {/* Message 2 - Assistant */}
-                    <div className="ia-msg ia-msg-assistant">
-                      <span className="ia-msg-num ia-num-green">2</span>
-                      <div className="ia-msg-bubble ia-bubble-assistant">
-                        <span className="ia-msg-role">ASSISTANT</span>
-                        <p>Đúng rồi. Bây giờ em thử nghĩ thêm: nếu một xe ô tô chạy trên đường thẳng và luôn giữ nguyên tốc độ, em nghĩ là gọi đó là loại chuyển động gì?</p>
-                      </div>
-                      <div className="ia-msg-label ia-label-scaf">SCAF <X size={10} /></div>
-                    </div>
-
-                    {/* Message 3 - User */}
-                    <div className="ia-msg ia-msg-user">
-                      <div className="ia-msg-bubble ia-bubble-user">
-                        <span className="ia-msg-role">USER</span>
-                        <p>Chuyển động đều a?</p>
-                      </div>
-                      <span className="ia-msg-num">3</span>
-                      <div className="ia-msg-label ia-label-ok"><Check size={10} /> OK <X size={10} /></div>
-                    </div>
+                      return (
+                        <div 
+                          key={msg.id} 
+                          className={msgClass}
+                          onClick={() => setSelectedIaMsgId(prev => prev === msg.id ? null : msg.id)}
+                          style={{ cursor: 'pointer', marginBottom: '8px' }}
+                        >
+                          {isUser ? (
+                            <>
+                              <div className={bubbleClass}>
+                                <span className="ia-msg-role">USER</span>
+                                <p>{msg.text}</p>
+                              </div>
+                              <span className={numClass}>{msg.turn}</span>
+                              {activeLabels.length > 0 && (
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px', marginLeft: '0' }}>
+                                  {activeLabels.map((lbl) => (
+                                    <div 
+                                      key={lbl}
+                                      className="ia-msg-label"
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        padding: '4px 10px',
+                                        borderRadius: '16px',
+                                        fontSize: '11px',
+                                        fontWeight: '700',
+                                        cursor: 'pointer',
+                                        margin: '0',
+                                        ...getLabelBadgeStyle(lbl)
+                                      }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleRemoveMessageSingleLabel(msg.id, lbl);
+                                      }}
+                                    >
+                                      {lbl === 'OK' && <Check size={10} style={{ marginRight: '2px' }} />}
+                                      {lbl} <X size={10} style={{ marginLeft: '4px' }} />
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <span className={numClass}>{msg.turn}</span>
+                              <div className={bubbleClass}>
+                                <span className="ia-msg-role">ASSISTANT</span>
+                                <p>{msg.text}</p>
+                              </div>
+                              {activeLabels.length > 0 && (
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px', marginLeft: '32px' }}>
+                                  {activeLabels.map((lbl) => (
+                                    <div 
+                                      key={lbl}
+                                      className="ia-msg-label"
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        padding: '4px 10px',
+                                        borderRadius: '16px',
+                                        fontSize: '11px',
+                                        fontWeight: '700',
+                                        cursor: 'pointer',
+                                        margin: '0',
+                                        ...getLabelBadgeStyle(lbl)
+                                      }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleRemoveMessageSingleLabel(msg.id, lbl);
+                                      }}
+                                    >
+                                      {lbl} <X size={10} style={{ marginLeft: '4px' }} />
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
 
                   {/* Pagination */}
@@ -2124,8 +2405,122 @@ function DataPrepView() {
 
                 {/* Hard Labels */}
                 <div className="ia-section-card">
-                  <h5 className="ia-section-subtitle">HARD LABELS</h5>
-                  <p className="ia-empty-hint">Chọn một tin nhắn để gán nhãn</p>
+                  {selectedIaMsgId ? (
+                    (() => {
+                      const selectedMsg = iaMessages.find(m => m.id === selectedIaMsgId);
+                      if (!selectedMsg) return null;
+                      
+                      return (
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <h5 className="ia-section-subtitle" style={{ margin: 0, textTransform: 'uppercase', fontSize: '13px', fontWeight: '800' }}>
+                              {selectedMsg.role === 'user' ? 'USER HARD LABELS' : 'ASSISTANT HARD LABELS'}
+                            </h5>
+                            <span style={{ color: '#7c3aed', fontWeight: 700, fontSize: '13px' }}>
+                              Turn {selectedMsg.turn}
+                            </span>
+                          </div>
+                          
+                          {Object.keys(selectedMsg.labels).map((groupName) => (
+                            <div key={groupName} className="ia-hl-group" style={{ marginBottom: '16px' }}>
+                              <span className="ia-hl-group-label" style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>
+                                {groupName}
+                              </span>
+                              <div className="ia-hl-tags" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                {selectedMsg.labels[groupName].map((tag) => {
+                                  const isTagActive = tag.active;
+                                  const isGreen = tag.colorClass === 'green' || (selectedMsg.role === 'user' && groupName === 'KNOWLEDGE' && tag.name === 'OK');
+                                  const isBlue = tag.colorClass === 'blue' || (selectedMsg.role === 'assistant' && groupName === 'PEDAGOGY' && tag.name === 'SCAF');
+                                  const isRed = tag.colorClass === 'red';
+                                  
+                                  let tagStyle = {
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    padding: '4px 8px',
+                                    border: '1px solid #e2e8f0',
+                                    borderRadius: '6px',
+                                    fontSize: '11px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s ease-in-out',
+                                    minWidth: '75px',
+                                    flex: '1 1 calc(33.33% - 6px)',
+                                    background: 'white',
+                                    color: '#334155',
+                                    boxSizing: 'border-box'
+                                  };
+
+                                  if (isTagActive) {
+                                    if (isGreen) {
+                                      tagStyle = {
+                                        ...tagStyle,
+                                        background: '#e8f5e9',
+                                        borderColor: '#4caf50',
+                                        color: '#2e7d32',
+                                        fontWeight: '700',
+                                      };
+                                    } else if (isBlue) {
+                                      tagStyle = {
+                                        ...tagStyle,
+                                        background: '#e3f2fd',
+                                        borderColor: '#2196f3',
+                                        color: '#1565c0',
+                                        fontWeight: '700',
+                                      };
+                                    } else if (isRed) {
+                                      tagStyle = {
+                                        ...tagStyle,
+                                        background: '#ffebee',
+                                        borderColor: '#ef5350',
+                                        color: '#c62828',
+                                        fontWeight: '700',
+                                      };
+                                    } else {
+                                      // Default active: purple
+                                      tagStyle = {
+                                        ...tagStyle,
+                                        background: '#f3e8ff',
+                                        borderColor: '#a855f7',
+                                        color: '#6b21a8',
+                                        fontWeight: '700',
+                                      };
+                                    }
+                                  }
+
+                                  // Specific widths to match image:
+                                  // OK and NO: 2 per row
+                                  if (groupName === 'KNOWLEDGE' || groupName === 'OTHER' || (groupName === 'ISSUES' && selectedMsg.role === 'user')) {
+                                    tagStyle.flex = '1 1 calc(50% - 6px)';
+                                  }
+
+                                  return (
+                                    <div
+                                      key={tag.name}
+                                      style={tagStyle}
+                                      onClick={() => handleToggleLabel(selectedMsg.id, groupName, tag.name)}
+                                      className="ia-hl-tag-interactive"
+                                    >
+                                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
+                                        <span style={{ fontSize: '11px' }}>{tag.icon}</span>
+                                        <span>{tag.name}</span>
+                                      </span>
+                                      <span style={{ opacity: 0.8, fontSize: '11px', fontWeight: 'bold', marginLeft: '4px' }}>{tag.count}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <div>
+                      <h5 className="ia-section-subtitle">HARD LABELS</h5>
+                      <p className="ia-empty-hint">Chọn một tin nhắn để gán nhãn</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Conversation Hard Labels */}

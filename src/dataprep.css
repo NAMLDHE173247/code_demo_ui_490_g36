@@ -4187,6 +4187,7 @@
   padding: 14px 18px;
   border-radius: 12px;
   position: relative;
+  transition: all 0.2s ease-in-out;
 }
 
 .ia-bubble-user {
@@ -4196,12 +4197,22 @@
   margin-right: 40px;
 }
 
+.ia-bubble-selected-user {
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.5) !important;
+  transform: scale(1.01);
+}
+
 .ia-bubble-assistant {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   color: #334155;
   margin-left: 32px;
   margin-right: 0;
+}
+
+.ia-bubble-selected-assistant {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5) !important;
+  transform: scale(1.01);
 }
 
 .ia-msg-role {
