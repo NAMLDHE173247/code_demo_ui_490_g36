@@ -291,7 +291,7 @@ function DataPrepView() {
   const [sepRunningQuality, setSepRunningQuality] = useState(false);
   const [sepRunningEval, setSepRunningEval] = useState(false);
   const [sepSubjectFilter, setSepSubjectFilter] = useState('ALL');
-  const [sepSelectedDistSubject, setSepSelectedDistSubject] = useState('MATH');
+  const [sepSelectedDistSubject, setSepSelectedDistSubject] = useState('ALL');
   const [sepSelectedDistQuality, setSepSelectedDistQuality] = useState('Rewrite');
   const [sepSelectedError, setSepSelectedError] = useState('');
   const [sepBalanceApplied, setSepBalanceApplied] = useState(false);
@@ -2389,22 +2389,29 @@ function DataPrepView() {
   ];
 
   const renderSep490Stage4 = () => {
-    const subjectGroups = sepBalanceApplied ? [
-      { group: 'MATH', label: 'Toán học', count: 300, percentage: 42, color: '#6366f1' },
-      { group: 'PHYSICAL', label: 'Vật lý', count: 280, percentage: 40, color: '#06b6d4' },
-      { group: 'CHEMISTRY', label: 'Hóa học', count: 290, percentage: 41, color: '#10b981' },
-      { group: 'BIOLOGY', label: 'Sinh học', count: 275, percentage: 39, color: '#f59e0b' },
-      { group: 'HISTORY', label: 'Lịch sử', count: 285, percentage: 40, color: '#ef4444' },
-      { group: 'GEOGRAPHY', label: 'Địa lý', count: 270, percentage: 38, color: '#ec4899' },
-      { group: 'LITERATURE', label: 'Ngữ văn', count: 295, percentage: 41, color: '#8b5cf6' },
+    const baseSubjects = sepBalanceApplied ? [
+      { group: 'MATH', label: 'Math', count: 300, percentage: 42, color: '#6366f1' },
+      { group: 'PHYSICAL', label: 'Physics', count: 280, percentage: 40, color: '#06b6d4' },
+      { group: 'CHEMISTRY', label: 'Chemistry', count: 290, percentage: 41, color: '#10b981' },
+      { group: 'BIOLOGY', label: 'Biology', count: 275, percentage: 39, color: '#f59e0b' },
+      { group: 'HISTORY', label: 'History', count: 285, percentage: 40, color: '#ef4444' },
+      { group: 'GEOGRAPHY', label: 'Geography', count: 270, percentage: 38, color: '#ec4899' },
+      { group: 'LITERATURE', label: 'Literature', count: 295, percentage: 41, color: '#8b5cf6' },
     ] : [
-      { group: 'MATH', label: 'Toán học', count: 450, percentage: 85, color: '#6366f1' },
-      { group: 'PHYSICAL', label: 'Vật lý', count: 300, percentage: 70, color: '#06b6d4' },
-      { group: 'CHEMISTRY', label: 'Hóa học', count: 200, percentage: 55, color: '#10b981' },
-      { group: 'BIOLOGY', label: 'Sinh học', count: 150, percentage: 40, color: '#f59e0b' },
-      { group: 'HISTORY', label: 'Lịch sử', count: 100, percentage: 20, color: '#ef4444' },
-      { group: 'GEOGRAPHY', label: 'Địa lý', count: 80, percentage: 18, color: '#ec4899' },
-      { group: 'LITERATURE', label: 'Ngữ văn', count: 320, percentage: 65, color: '#8b5cf6' },
+      { group: 'MATH', label: 'Math', count: 450, percentage: 85, color: '#6366f1' },
+      { group: 'PHYSICAL', label: 'Physics', count: 300, percentage: 70, color: '#06b6d4' },
+      { group: 'CHEMISTRY', label: 'Chemistry', count: 200, percentage: 55, color: '#10b981' },
+      { group: 'BIOLOGY', label: 'Biology', count: 150, percentage: 40, color: '#f59e0b' },
+      { group: 'HISTORY', label: 'History', count: 100, percentage: 20, color: '#ef4444' },
+      { group: 'GEOGRAPHY', label: 'Geography', count: 80, percentage: 18, color: '#ec4899' },
+      { group: 'LITERATURE', label: 'Literature', count: 320, percentage: 65, color: '#8b5cf6' },
+    ];
+
+    const subjectTotal = baseSubjects.reduce((sum, item) => sum + item.count, 0);
+
+    const subjectGroups = [
+      { group: 'ALL', label: 'All', count: subjectTotal, percentage: 100, color: '#64748b' },
+      ...baseSubjects
     ];
 
     const conversations = [
@@ -2501,7 +2508,7 @@ function DataPrepView() {
         ...source,
         id: `${source.id}_${idx + 1}`,
         convId: `${source.convId}_${idx + 1}`,
-        subject: subjectGroups[idx % subjectGroups.length].group,
+        subject: baseSubjects[idx % baseSubjects.length].group,
         bucket,
         score: bucket === 'Gold' ? 8.6 + (idx % 3) * 0.2 : bucket === 'Rewrite' ? 4.1 + (idx % 5) * 0.35 : 2.0 + (idx % 3) * 0.25,
         issueKey,
@@ -2518,7 +2525,7 @@ function DataPrepView() {
             : 'The response does not guide the learner enough for training.',
         messages: source.messages.map((msg, msgIdx) => ({
           ...msg,
-          text: cycle === 0 ? msg.text : `${msg.text} (${subjectGroups[idx % subjectGroups.length].label} sample ${idx + 1}.${msgIdx + 1})`,
+          text: cycle === 0 ? msg.text : `${msg.text} (${baseSubjects[idx % baseSubjects.length].label} sample ${idx + 1}.${msgIdx + 1})`,
         })),
       };
     });
@@ -2530,7 +2537,7 @@ function DataPrepView() {
       return bucketOk && errorOk;
     });
 
-    const subjectTotal = subjectGroups.reduce((sum, item) => sum + item.count, 0);
+    // subjectTotal computed earlier
     const qualityTotal = qualityDistribution.reduce((sum, item) => sum + item.count, 0);
     const selectedSubject = subjectGroups.find((item) => item.group === sepSelectedDistSubject) || subjectGroups[0];
     const selectedQuality = qualityDistribution.find((item) => item.label === sepSelectedDistQuality) || qualityDistribution[1];
@@ -2635,7 +2642,7 @@ function DataPrepView() {
                 <span>All samples</span>
                 {sepSubjectFilter === 'ALL' && <Check size={15} />}
               </button>
-              {subjectGroups.map((item) => (
+              {baseSubjects.map((item) => (
                 <button key={item.group} className={`sep490-filter-row ${sepSubjectFilter === item.group ? 'active' : ''}`} onClick={() => { setSepSubjectFilter(item.group); setClassPage(1); }}>
                   <span>{item.group}</span>
                   <span>{item.percentage}% <strong>{item.count}</strong>{sepSubjectFilter === item.group && <Check size={15} />}</span>
@@ -2764,7 +2771,7 @@ function DataPrepView() {
                   }}
                 >
                   <Sparkles size={14} />
-                  {sepBalanceApplied ? 'Đã cân bằng' : 'Cân bằng dữ liệu'}
+                  {sepBalanceApplied ? 'Balanced' : 'Balance Dataset'}
                 </button>
                 <button className="s4-btn-primary"><Download size={14} /> Export report</button>
               </div>
@@ -2778,7 +2785,7 @@ function DataPrepView() {
               </div>
               <div className="s4-stat-card">
                 <div className="s4-stat-icon-row"><span className="s4-stat-icon s4-stat-icon-purple">S</span><span className="s4-stat-badge">stable</span></div>
-                <div className="s4-stat-value">{subjectGroups.length}</div>
+                <div className="s4-stat-value">{subjectGroups.length - 1}</div>
                 <div className="s4-stat-label">SUBJECTS</div>
               </div>
               <div className="s4-stat-card">
@@ -2795,7 +2802,7 @@ function DataPrepView() {
 
             <div className="s4-dist-charts">
               <div className="s4-chart-card">
-                <h4><BarChart2 size={16} /> PHÂN BỐ THEO MÔN HỌC</h4>
+                <h4><BarChart2 size={16} /> SUBJECT DISTRIBUTION</h4>
                 <div className="s4-bar-chart">
                   {subjectGroups.map((item) => (
                     <button
@@ -2819,14 +2826,31 @@ function DataPrepView() {
               </div>
 
               <div className="s4-chart-card">
-                <h4>⏳ PHÂN LOẠI CHẤT LƯỢNG</h4>
+                <h4>⏳ QUALITY CLASSIFICATION</h4>
                 <div className="s4-donut-container">
-                  <svg viewBox="0 0 200 200" className="s4-donut-svg">
-                    <circle cx="100" cy="100" r="70" fill="none" stroke="#f1f5f9" strokeWidth="28" />
-                    <circle cx="100" cy="100" r="70" fill="none" stroke="#10b981" strokeWidth="28" strokeDasharray="175.93 263.89" strokeDashoffset="0" transform="rotate(-90 100 100)" strokeLinecap="round" />
-                    <circle cx="100" cy="100" r="70" fill="none" stroke="#f59e0b" strokeWidth="28" strokeDasharray="197.92 241.90" strokeDashoffset="-175.93" transform="rotate(-90 100 100)" />
-                    <circle cx="100" cy="100" r="70" fill="none" stroke="#ef4444" strokeWidth="28" strokeDasharray="65.97 373.85" strokeDashoffset="-373.85" transform="rotate(-90 100 100)" />
-                  </svg>
+                  <div className="s4-donut-wrapper" style={{ position: 'relative', width: '160px', height: '160px', flexShrink: 0 }}>
+                    <svg viewBox="0 0 200 200" className="s4-donut-svg" style={{ width: '100%', height: '100%' }}>
+                      <circle cx="100" cy="100" r="70" fill="none" stroke="#f1f5f9" strokeWidth="28" />
+                      <circle cx="100" cy="100" r="70" fill="none" stroke="#10b981" strokeWidth="28" strokeDasharray="175.93 263.89" strokeDashoffset="0" transform="rotate(-90 100 100)" strokeLinecap="round" />
+                      <circle cx="100" cy="100" r="70" fill="none" stroke="#f59e0b" strokeWidth="28" strokeDasharray="197.92 241.90" strokeDashoffset="-175.93" transform="rotate(-90 100 100)" />
+                      <circle cx="100" cy="100" r="70" fill="none" stroke="#ef4444" strokeWidth="28" strokeDasharray="65.97 373.85" strokeDashoffset="-373.85" transform="rotate(-90 100 100)" />
+                    </svg>
+                    <div className="s4-donut-center" style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      textAlign: 'center',
+                      pointerEvents: 'none',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <strong style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', lineHeight: '1.1' }}>{qualityTotal}</strong>
+                      <span style={{ fontSize: '10px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total</span>
+                    </div>
+                  </div>
                   <div className="s4-donut-legend">
                     {qualityDistribution.slice(0, 3).map(({ label, count, tone }) => (
                       <button
