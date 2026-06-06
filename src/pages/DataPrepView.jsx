@@ -2803,13 +2803,29 @@ function DataPrepView() {
                 <div className="s4-donut-container">
                   <svg viewBox="0 0 200 200" className="s4-donut-svg">
                     <circle cx="100" cy="100" r="70" fill="none" stroke="#f1f5f9" strokeWidth="28" />
-                    <circle className={`s4-donut-segment ${sepSelectedDistQuality === 'Gold' ? 'active' : ''}`} onMouseEnter={() => setSepSelectedDistQuality('Gold')} cx="100" cy="100" r="70" fill="none" stroke="#10b981" strokeWidth="28" strokeDasharray="175.93 263.89" strokeDashoffset="0" transform="rotate(-90 100 100)" strokeLinecap="round" />
-                    <circle className={`s4-donut-segment ${sepSelectedDistQuality === 'Rewrite' ? 'active' : ''}`} onMouseEnter={() => setSepSelectedDistQuality('Rewrite')} cx="100" cy="100" r="70" fill="none" stroke="#f59e0b" strokeWidth="28" strokeDasharray="197.92 241.90" strokeDashoffset="-175.93" transform="rotate(-90 100 100)" />
-                    <circle className={`s4-donut-segment ${sepSelectedDistQuality === 'Bad' ? 'active' : ''}`} onMouseEnter={() => setSepSelectedDistQuality('Bad')} cx="100" cy="100" r="70" fill="none" stroke="#ef4444" strokeWidth="28" strokeDasharray="65.97 373.85" strokeDashoffset="-373.85" transform="rotate(-90 100 100)" />
+                    <circle cx="100" cy="100" r="70" fill="none" stroke="#10b981" strokeWidth="28" strokeDasharray="175.93 263.89" strokeDashoffset="0" transform="rotate(-90 100 100)" strokeLinecap="round" />
+                    <circle cx="100" cy="100" r="70" fill="none" stroke="#f59e0b" strokeWidth="28" strokeDasharray="197.92 241.90" strokeDashoffset="-175.93" transform="rotate(-90 100 100)" />
+                    <circle cx="100" cy="100" r="70" fill="none" stroke="#ef4444" strokeWidth="28" strokeDasharray="65.97 373.85" strokeDashoffset="-373.85" transform="rotate(-90 100 100)" />
                   </svg>
                   <div className="s4-donut-center">
                     <strong>{qualityTotal}</strong>
                     <span>Total</span>
+                  </div>
+                  <div className="s4-donut-legend">
+                    {qualityDistribution.slice(0, 3).map(({ label, count, tone }) => (
+                      <button
+                        key={label}
+                        className={`s4-legend-item s4-legend-click ${sepSelectedDistQuality === label ? 'active' : ''}`}
+                        onClick={() => {
+                          setSepSelectedDistQuality(label);
+                          setQualityTab(label.toLowerCase());
+                        }}
+                      >
+                        <span className="s4-legend-dot" style={{ background: tone === 'emerald' ? '#10b981' : tone === 'amber' ? '#f59e0b' : '#ef4444' }} />
+                        <span>{label === 'Gold' ? 'Gold (Excellent)' : label === 'Rewrite' ? 'Needs Rewrite' : 'Bad (Reject)'}</span>
+                        <strong>{Math.round((count / qualityTotal) * 100)}%</strong>
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
