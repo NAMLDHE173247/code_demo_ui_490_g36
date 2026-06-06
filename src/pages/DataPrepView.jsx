@@ -2532,7 +2532,12 @@ function DataPrepView() {
 
     const filteredQualitySamples = qualitySamples.filter((item) => {
       const itemLabel = getQualityLabel(item);
-      const bucketOk = qualityTab === 'all' || itemLabel.toLowerCase() === qualityTab;
+      const labelLower = itemLabel.toLowerCase();
+      const tabLower = qualityTab.toLowerCase();
+      const bucketOk = tabLower === 'all' ||
+                       labelLower === tabLower ||
+                       (tabLower === 'gold' && labelLower === 'good') ||
+                       (tabLower === 'good' && labelLower === 'gold');
       const errorOk = !sepSelectedError || item.issueKey === sepSelectedError;
       return bucketOk && errorOk;
     });
@@ -2690,7 +2695,7 @@ function DataPrepView() {
                     ['rewrite', 'Needs Rewrite', '14 HT / 56 MSG'],
                     ['bad', 'Bad', '4 HT / 16 MSG'],
                   ].map(([key, label, sub]) => (
-                    <button key={key} className={qualityTab === key ? 'active' : ''} onClick={() => setQualityTab(key)}>
+                    <button key={key} className={qualityTab === key ? 'active' : ''} onClick={() => { setQualityTab(key); setSepSelectedError(''); }}>
                       <span>{label}</span>
                       <small>{sub}</small>
                     </button>
@@ -2738,7 +2743,7 @@ function DataPrepView() {
                     ['direct-answer', 'Student asks theory -> AI gives direct answer', '68%'],
                     ['low-training-value', 'Low training value or reject-level answer', '32%'],
                   ].map(([key, label, width]) => (
-                    <button key={key} className={`sep490-error-row ${sepSelectedError === key ? 'active' : ''}`} onClick={() => setSepSelectedError(key)}>
+                    <button key={key} className={`sep490-error-row ${sepSelectedError === key ? 'active' : ''}`} onClick={() => setSepSelectedError((prev) => prev === key ? '' : key)}>
                       <span>{label}</span>
                       <div className="sep490-progress rose"><span style={{ width }} /></div>
                     </button>
@@ -2828,7 +2833,7 @@ function DataPrepView() {
               <div className="s4-chart-card">
                 <h4>⏳ QUALITY CLASSIFICATION</h4>
                 <div className="s4-donut-container">
-                  <div className="s4-donut-wrapper" style={{ position: 'relative', width: '160px', height: '160px', flexShrink: 0 }}>
+                  <div className="s4-donut-wrapper" style={{ position: 'relative', width: '230px', height: '230px', flexShrink: 0 }}>
                     <svg viewBox="0 0 200 200" className="s4-donut-svg" style={{ width: '100%', height: '100%' }}>
                       <circle cx="100" cy="100" r="70" fill="none" stroke="#f1f5f9" strokeWidth="28" />
                       <circle cx="100" cy="100" r="70" fill="none" stroke="#10b981" strokeWidth="28" strokeDasharray="175.93 263.89" strokeDashoffset="0" transform="rotate(-90 100 100)" strokeLinecap="round" />
