@@ -47,6 +47,9 @@ function ChatView() {
     }
   ];
 
+  const allOptions = modelGroups.flatMap(g => g.options);
+  const [singleModel, setSingleModel] = useState(allOptions[0] || '');
+
   const sessions = [
     { id: 1, title: 'GPT-4 Code Review', messages: 12, time: '2h ago' },
     { id: 2, title: 'Data Analysis Discussion', messages: 8, time: '2h ago' },
@@ -136,7 +139,17 @@ function ChatView() {
                 <select style={{ width: '150px' }}>
                   <option>Manual ID</option>
                 </select>
-                <input type="text" placeholder="Model ID (tùy chọn, VD: openai/gpt 4o)" />
+                <select
+                  className="model-select"
+                  value={singleModel}
+                  onChange={(e) => setSingleModel(e.target.value)}
+                  style={{ width: '260px' }}
+                >
+                  <option value="">Model ID (tùy chọn, VD: openai/gpt 4o)</option>
+                  {allOptions.map((opt, idx) => (
+                    <option key={idx} value={opt}>{opt}</option>
+                  ))}
+                </select>
                 <button className="api-btn">Sử dụng API</button>
               </div>
               
