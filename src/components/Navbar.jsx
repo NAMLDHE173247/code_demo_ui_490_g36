@@ -54,6 +54,29 @@ function Navbar() {
             </div>
           </div>
 
+          {/* Quick Role Simulation Selector for ease of testing */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', marginRight: '16px', background: '#f8fafc', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '20px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Simulate:</span>
+            <select
+              value={user.role}
+              onChange={(e) => {
+                const newRole = e.target.value;
+                const accounts = {
+                  admin:      { name: 'Admin User',      role: 'admin',      email: 'admin@learninghub.com', status: 'active' },
+                  supervisor: { name: 'Supervisor User',  role: 'supervisor', email: 'supervisor@learninghub.com', status: 'active' },
+                  staff:      { name: 'Staff User',       role: 'staff',      email: 'staff@learninghub.com', status: 'active' },
+                };
+                login(accounts[newRole]);
+                navigate('/dashboard');
+              }}
+              style={{ background: 'transparent', border: 'none', fontSize: '12px', fontWeight: '800', color: '#2563eb', cursor: 'pointer', outline: 'none', paddingRight: '4px' }}
+            >
+              <option value="admin">🔧 Admin</option>
+              <option value="supervisor">👥 Supervisor</option>
+              <option value="staff">✍️ Staff</option>
+            </select>
+          </div>
+
           {/* Right: User Profile (Logged in) */}
           <div 
             className="user-profile" 
